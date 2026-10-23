@@ -45,7 +45,7 @@ export function SideNav({ isAdmin, unread, name }: Props) {
         </div>
         <span className="text-xl font-bold">Task Track</span>
       </div>
-      {item("/", "งานทั้งหมด", <List size={20} />)}
+      {item("/", "รายการงาน", <List size={20} />)}
       {item("/tasks/new", "แจ้งปัญหา", <PlusCircle size={20} />)}
       <Link
         href="/notifications"

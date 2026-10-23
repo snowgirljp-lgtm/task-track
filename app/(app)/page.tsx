@@ -26,7 +26,11 @@ export default async function TaskListPage({
   searchParams: Promise<{ q?: string; status?: string }>;
 }) {
   const profile = await requireProfile();
-  const { q = "", status = "" } = await searchParams;
+  const { q = "", status: statusParam } = await searchParams;
+  // ค่าเริ่มต้นเมื่อเปิดหน้า: Admin → รอตรวจ, คนอื่น → รอดำเนินการ ("all" = ทั้งหมด)
+  const status = statusParam && (statusParam === "all" || statusParam in STATUS)
+    ? statusParam
+    : profile.role === "admin" ? "review" : "pending";
   const supabase = await createClient();
 
   let query = supabase
@@ -36,7 +40,7 @@ export default async function TaskListPage({
     )
     .order("created_at", { ascending: false })
     .limit(500);
-  if (status && status in STATUS) query = query.eq("status", status);
+  if (status !== "all") query = query.eq("status", status);
 
   // ดึงทั้ง 3 อย่างพร้อมกัน
   const [{ data }, { data: latest }, { count: unread }] = await Promise.all([
@@ -65,11 +69,11 @@ export default async function TaskListPage({
   const chip = (value: string, label: string) => {
     const on = status === value;
     const params = new URLSearchParams();
-    if (value) params.set("status", value);
+    params.set("status", value);
     if (q) params.set("q", q);
     return (
       <Link
-        key={value || "all"}
+        key={value}
         href={`/?${params.toString()}`}
         className={`shrink-0 h-9 px-3.5 rounded-full text-sm font-medium flex items-center border ${on ? "bg-brand text-white border-brand" : "bg-white text-ink border-field"}`}
       >
@@ -78,12 +82,12 @@ export default async function TaskListPage({
     );
   };
 
-  const exportHref = `/api/export?${new URLSearchParams({ ...(status ? { status } : {}), ...(q ? { q } : {}) }).toString()}`;
+  const exportHref = `/api/export?${new URLSearchParams({ ...(status !== "all" ? { status } : {}), ...(q ? { q } : {}) }).toString()}`;
 
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-3 flex-wrap">
-        <h1 className="text-2xl md:text-3xl font-bold">งานทั้งหมด</h1>
+        <h1 className="text-2xl md:text-3xl font-bold">รายการงาน</h1>
         <div className="flex gap-2">
           {profile.role === "admin" && (
             <a href={exportHref} className="btn btn-outline">ส่งออก Excel</a>
@@ -107,7 +111,7 @@ export default async function TaskListPage({
 
       <Form data-nav-form="true" className="flex items-center gap-2 h-11 rounded-xl bg-white border border-line px-3" action="/">
         <Search size={18} color="#4B5768" />
-        {status && <input type="hidden" name="status" value={status} />}
+        <input type="hidden" name="status" value={status} />
         <input
           type="search"
           name="q"
@@ -120,7 +124,7 @@ export default async function TaskListPage({
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
         {STATUS_ORDER.map((s) => chip(s, STATUS[s].label))}
-        {chip("", "ทั้งหมด")}
+        {chip("all", "ทั้งหมด")}
       </div>
 
       {tasks.length === 0 ? (
