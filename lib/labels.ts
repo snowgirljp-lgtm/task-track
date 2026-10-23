@@ -30,7 +30,7 @@ export const FIELD: Record<string, string> = {
   urgency: "ความเร่งด่วน",
   company_id: "บริษัท",
   project_id: "โครงการ",
-  due_date: "วันที่ต้องเสร็จ",
+  due_date: "วันที่ครบกำหนดส่ง",
   solution: "วิธีแก้",
 };
 

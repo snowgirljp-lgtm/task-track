@@ -140,7 +140,7 @@ export default async function TaskListPage({
                 </div>
                 <div className="flex justify-between text-[13px] text-muted border-t border-[#EEF1F5] pt-2">
                   <span className={late ? "text-danger font-semibold" : ""}>
-                    {late ? "เลยกำหนด " : "กำหนดเสร็จ "}
+                    {late ? "เลยกำหนดส่ง " : "ครบกำหนดส่ง "}
                     {fmtDate(t.due_date)}
                   </span>
                   <span>{t.owner?.full_name ?? "ยังไม่มีผู้รับ"}</span>

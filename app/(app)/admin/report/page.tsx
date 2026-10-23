@@ -42,7 +42,7 @@ export default async function ReportPage({
       <table className="w-full text-[12px] border-collapse">
         <thead>
           <tr className="text-left bg-[#F4F6FA]">
-            {["รหัส", "หัวข้อ", "บริษัท", "โครงการ", "หมวดหมู่", "ด่วน", "กำหนดเสร็จ", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
+            {["รหัส", "หัวข้อ", "บริษัท", "โครงการ", "หมวดหมู่", "ด่วน", "ครบกำหนดส่ง", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
               <th key={h} className="py-1.5 px-1.5 font-semibold border-b border-line">{h}</th>
             ))}
           </tr>

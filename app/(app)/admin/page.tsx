@@ -110,12 +110,12 @@ export default async function DashboardPage({
       </div>
 
       <section className="card p-5 flex flex-col gap-1">
-        <h2 className="text-lg font-bold text-danger mb-2">เลยกำหนดเสร็จ ({late.length})</h2>
+        <h2 className="text-lg font-bold text-danger mb-2">เลยกำหนดส่ง ({late.length})</h2>
         {late.length === 0 && <p className="text-sm text-muted">ไม่มีงานเลยกำหนด</p>}
         {late.map((t) => (
           <Link key={t.id} href={`/tasks/${t.id}`} className="flex flex-wrap justify-between gap-2 text-sm py-2.5 border-b border-[#EEF1F5] last:border-b-0">
             <span className="font-medium">{t.title}</span>
-            <span className="text-muted">{t.company?.name} › {t.project?.name} · กำหนด {fmtDate(t.due_date)} · {STATUS[t.status].label}</span>
+            <span className="text-muted">{t.company?.name} › {t.project?.name} · ครบกำหนดส่ง {fmtDate(t.due_date)} · {STATUS[t.status].label}</span>
           </Link>
         ))}
       </section>

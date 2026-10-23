@@ -34,7 +34,7 @@ export async function GET(request: NextRequest) {
     { header: "ความเร่งด่วน", key: "urgency", width: 12 },
     { header: "บริษัท", key: "company", width: 20 },
     { header: "โครงการ", key: "project", width: 20 },
-    { header: "กำหนดเสร็จ", key: "due", width: 13 },
+    { header: "วันที่ครบกำหนดส่ง", key: "due", width: 18 },
     { header: "สถานะ", key: "status", width: 14 },
     { header: "ผู้แจ้ง", key: "reporter", width: 18 },
     { header: "ผู้รับผิดชอบ", key: "owner", width: 18 },

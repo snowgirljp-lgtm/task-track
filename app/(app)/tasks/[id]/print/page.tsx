@@ -27,7 +27,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
     ["บริษัท", t.company?.name ?? "-"],
     ["โครงการ", t.project?.name ?? "-"],
     ["หมวดหมู่", t.category?.name ?? "-"],
-    ["กำหนดเสร็จ", fmtDate(t.due_date)],
+    ["วันที่ครบกำหนดส่ง", fmtDate(t.due_date)],
     ["ผู้แจ้ง", `${t.reporter?.full_name ?? "-"} (${fmtDateTime(t.created_at)})`],
     ["ผู้รับผิดชอบ", t.owner?.full_name ?? "-"],
     ["อัปเดตล่าสุด", fmtDateTime(t.updated_at)],
