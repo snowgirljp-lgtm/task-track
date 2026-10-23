@@ -7,6 +7,7 @@ import { FIELD, STATUS, URGENCY, fmtDate, fmtDateTime, isOverdue } from "@/lib/l
 import type { Status, Urgency } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import TaskActions from "@/components/TaskActions";
+import DeleteTask from "@/components/DeleteTask";
 import { Back } from "@/components/icons";
 
 type History = {
@@ -147,6 +148,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
           </div>
         ))}
       </section>
+      {isAdmin && <DeleteTask taskId={id} code={t.code} />}
     </div>
   );
 }
