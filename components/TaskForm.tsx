@@ -9,6 +9,11 @@ import { Camera, X } from "./icons";
 
 const MAX_IMAGES = 5;
 
+/** หมายเหตุใต้ช่อง "วันที่ต้องเสร็จ" — เพิ่มข้อใหม่ได้โดยเพิ่มบรรทัดในรายการนี้ */
+const DUE_NOTES = [
+  "เซ็นต์บิล/ส่งของใหม่เคลียให้จบภายใน 3 วัน (กรณีสิ้นเดือนต้องเคลียให้จบก่อนวันที่ 25) ยกเว้นปลายทางอยู่ต่างจังหวัดเคลียให้จบภายใน 7 วัน",
+];
+
 type Existing = { id: string; storage_path: string; url: string };
 
 type Initial = {
@@ -222,6 +227,12 @@ export default function TaskForm({ companies, projects, categories, initial, ima
       <div>
         <label htmlFor="due" className="label req">วันที่ต้องเสร็จ</label>
         <input id="due" type="date" required className="field" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+        <div className="mt-2 rounded-xl bg-[#FFF8E6] border border-[#F3D9A8] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#6B4300]">
+          <div className="font-semibold mb-0.5">หมายเหตุ</div>
+          <ol className="list-decimal pl-5">
+            {DUE_NOTES.map((n) => <li key={n}>{n}</li>)}
+          </ol>
+        </div>
       </div>
 
       {error && <div role="alert" className="rounded-xl bg-[#FDE4E2] text-danger px-4 py-3 text-sm">{error}</div>}
