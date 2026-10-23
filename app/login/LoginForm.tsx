@@ -93,6 +93,7 @@ export default function LoginForm({ initialError }: { initialError: string | nul
         <button type="button" onClick={() => setShowAdmin((v) => !v)} className="text-sm text-brand hover:underline self-center min-h-11">
           {showAdmin ? "ซ่อนการเข้าด้วยรหัสผ่าน" : "สำหรับ Admin: เข้าด้วยอีเมลและรหัสผ่าน"}
         </button>
+        <a href="/privacy" className="text-xs text-muted hover:underline self-center">นโยบายความเป็นส่วนตัว</a>
       </div>
     </main>
   );
