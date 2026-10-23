@@ -19,7 +19,9 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
     .maybeSingle();
   if (!data) notFound();
   const t = data as any;
-  const images = await loadTaskImages(id);
+  const all = await loadTaskImages(id);
+  const images = all.filter((i) => i.kind === "problem");
+  const solutionImages = all.filter((i) => i.kind === "solution");
 
   const rows: [string, string][] = [
     ["สถานะ", STATUS[t.status as Status].label],
@@ -61,6 +63,14 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
       <section>
         <h2 className="font-bold mb-1">วิธีแก้</h2>
         <p className="whitespace-pre-line leading-relaxed">{t.solution || "-"}</p>
+        {solutionImages.length > 0 && (
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            {solutionImages.map((img, i) => (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img key={img.id} src={img.url} alt={`รูปหลังแก้ ${i + 1}`} className="w-full rounded-lg border border-line break-inside-avoid" />
+            ))}
+          </div>
+        )}
       </section>
       {t.status_note && (
         <section>
@@ -71,7 +81,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
 
       {images.length > 0 && (
         <section>
-          <h2 className="font-bold mb-2">รูปภาพ</h2>
+          <h2 className="font-bold mb-2">รูปตอนแจ้งปัญหา</h2>
           <div className="grid grid-cols-2 gap-3">
             {images.map((img, i) => (
               // eslint-disable-next-line @next/next/no-img-element

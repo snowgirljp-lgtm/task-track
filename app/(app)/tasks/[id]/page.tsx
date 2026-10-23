@@ -60,7 +60,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
   const isAdmin = profile.role === "admin";
   const closed = status === "done" || status === "cancelled";
 
-  const [images, { data: history }] = await Promise.all([
+  const [allImages, { data: history }] = await Promise.all([
     loadTaskImages(id),
     supabase
       .from("task_history")
@@ -68,6 +68,9 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
       .eq("task_id", id)
       .order("created_at", { ascending: false }),
   ]);
+
+  const images = allImages.filter((i) => i.kind === "problem");
+  const solutionImages = allImages.filter((i) => i.kind === "solution");
 
   const showRedoReason = t.status_note && (status === "redo" || status === "in_progress");
   const late = isOverdue(t.due_date, status);
@@ -130,7 +133,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
         <div className="rounded-[14px] bg-[#EEF1F5] px-4 py-3.5 text-sm">เหตุผลที่ยกเลิก: {t.status_note}</div>
       )}
 
-      <TaskActions taskId={id} status={status} solution={t.solution ?? ""} isAdmin={isAdmin} />
+      <TaskActions taskId={id} status={status} solution={t.solution ?? ""} solutionImages={solutionImages} isAdmin={isAdmin} />
 
       <section className="card p-4 flex flex-col gap-3">
         <h3 className="text-base font-bold">ประวัติ</h3>

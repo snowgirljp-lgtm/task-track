@@ -19,7 +19,7 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
   if (!task) notFound();
   if ((task.status === "done" || task.status === "cancelled") && profile.role !== "admin") redirect(`/tasks/${id}`);
 
-  const [data, images] = await Promise.all([loadMasterData(), loadTaskImages(id)]);
+  const [data, images] = await Promise.all([loadMasterData(), loadTaskImages(id, "problem")]);
 
   return (
     <div className="flex flex-col gap-5">

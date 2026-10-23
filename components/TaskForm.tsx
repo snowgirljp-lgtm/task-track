@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { URGENCY, friendlyError } from "@/lib/labels";
 import type { Named, Project, Urgency } from "@/lib/types";
+import { shrink } from "@/lib/shrink";
 import { Camera, X } from "./icons";
 
 const MAX_IMAGES = 5;
@@ -34,22 +35,6 @@ type Props = {
   initial?: Initial;
   images?: Existing[];
 };
-
-/** ย่อรูปก่อนอัปโหลด (ด้านยาวไม่เกิน 1600px, JPEG) */
-async function shrink(file: File): Promise<Blob> {
-  try {
-    const bmp = await createImageBitmap(file);
-    const scale = Math.min(1, 1600 / Math.max(bmp.width, bmp.height));
-    const canvas = document.createElement("canvas");
-    canvas.width = Math.round(bmp.width * scale);
-    canvas.height = Math.round(bmp.height * scale);
-    canvas.getContext("2d")!.drawImage(bmp, 0, 0, canvas.width, canvas.height);
-    const blob = await new Promise<Blob | null>((r) => canvas.toBlob(r, "image/jpeg", 0.82));
-    return blob ?? file;
-  } catch {
-    return file;
-  }
-}
 
 export default function TaskForm({ companies, projects, categories, initial, images = [] }: Props) {
   const router = useRouter();
@@ -245,7 +230,7 @@ export default function TaskForm({ companies, projects, categories, initial, ima
   );
 }
 
-function Thumb({ src, onRemove }: { src: string; onRemove: () => void }) {
+export function Thumb({ src, onRemove }: { src: string; onRemove: () => void }) {
   return (
     <div className="relative aspect-square rounded-xl overflow-hidden bg-[#C9D6EA]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
