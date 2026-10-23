@@ -12,13 +12,12 @@ export default async function DashboardPage({
   await requireAdmin();
   const { range = "month", company = "" } = await searchParams;
   const supabase = await createClient();
-  const [{ data: companies }, rows] = await Promise.all([
+  // งานที่ยังเปิดอยู่ทั้งหมด (ไม่จำกัดช่วงเวลา) ใช้สำหรับรายการรอตรวจ/เลยกำหนด — ดึงพร้อมกันทั้งหมด
+  const [{ data: companies }, rows, open] = await Promise.all([
     supabase.from("companies").select("id, name").order("name"),
     loadReport({ range, company }),
+    loadReport({ range: "all", company }),
   ]);
-
-  // งานที่ยังเปิดอยู่ทั้งหมด (ไม่จำกัดช่วงเวลา) ใช้สำหรับรายการรอตรวจ/เลยกำหนด
-  const open = await loadReport({ range: "all", company });
   const active = open.filter((t) => t.status !== "done" && t.status !== "cancelled");
   const review = active.filter((t) => t.status === "review");
   const late = active.filter((t) => isOverdue(t.due_date, t.status));

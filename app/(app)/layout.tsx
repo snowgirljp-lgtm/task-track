@@ -3,13 +3,12 @@ import { createClient } from "@/lib/supabase/server";
 import { BottomNav, SideNav, TopBar } from "@/components/Nav";
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
-  const profile = await requireProfile();
   const supabase = await createClient();
-  const { count } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", profile.id)
-    .is("read_at", null);
+  // ดึงพร้อมกัน — RLS ให้เห็นเฉพาะแจ้งเตือนของตัวเองอยู่แล้ว
+  const [profile, { count }] = await Promise.all([
+    requireProfile(),
+    supabase.from("notifications").select("id", { count: "exact", head: true }).is("read_at", null),
+  ]);
   const unread = count ?? 0;
   const isAdmin = profile.role === "admin";
 

@@ -36,7 +36,23 @@ export default async function TaskListPage({
     .order("created_at", { ascending: false })
     .limit(500);
   if (status && status in STATUS) query = query.eq("status", status);
-  const { data } = await query;
+
+  // ดึงทั้ง 3 อย่างพร้อมกัน
+  const [{ data }, { data: latest }, { count: unread }] = await Promise.all([
+    query,
+    supabase
+      .from("notifications")
+      .select("message")
+      .eq("user_id", profile.id)
+      .is("read_at", null)
+      .order("created_at", { ascending: false })
+      .limit(1),
+    supabase
+      .from("notifications")
+      .select("id", { count: "exact", head: true })
+      .eq("user_id", profile.id)
+      .is("read_at", null),
+  ]);
 
   const term = q.trim().toLowerCase();
   const tasks = ((data ?? []) as unknown as Row[]).filter(
@@ -44,19 +60,6 @@ export default async function TaskListPage({
       !term ||
       [t.title, t.code, t.company?.name, t.project?.name, t.category?.name].some((v) => v?.toLowerCase().includes(term))
   );
-
-  const { data: latest } = await supabase
-    .from("notifications")
-    .select("message")
-    .eq("user_id", profile.id)
-    .is("read_at", null)
-    .order("created_at", { ascending: false })
-    .limit(1);
-  const { count: unread } = await supabase
-    .from("notifications")
-    .select("id", { count: "exact", head: true })
-    .eq("user_id", profile.id)
-    .is("read_at", null);
 
   const chip = (value: string, label: string) => {
     const on = status === value;
