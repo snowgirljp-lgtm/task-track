@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Form from "next/form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { STATUS, STATUS_ORDER, URGENCY, fmtDate, isOverdue } from "@/lib/labels";
@@ -104,7 +105,7 @@ export default async function TaskListPage({
         </Link>
       )}
 
-      <form className="flex items-center gap-2 h-11 rounded-xl bg-white border border-line px-3" action="/">
+      <Form data-nav-form="true" className="flex items-center gap-2 h-11 rounded-xl bg-white border border-line px-3" action="/">
         <Search size={18} color="#4B5768" />
         {status && <input type="hidden" name="status" value={status} />}
         <input
@@ -115,7 +116,7 @@ export default async function TaskListPage({
           aria-label="ค้นหางาน"
           className="flex-1 bg-transparent outline-none text-[15px]"
         />
-      </form>
+      </Form>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
         {chip("", "ทั้งหมด")}

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Form from "next/form";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { RANGES, loadReport } from "@/lib/report";
@@ -42,7 +43,7 @@ export default async function DashboardPage({
           <h1 className="text-3xl font-bold">ภาพรวม</h1>
           <p className="text-sm text-muted">ตัวเลขตามช่วงเวลาที่แจ้งงาน · รอตรวจและเลยกำหนดแสดงทุกงานที่ยังเปิดอยู่</p>
         </div>
-        <form className="flex flex-wrap gap-2" action="/admin">
+        <Form data-nav-form="true" className="flex flex-wrap gap-2" action="/admin">
           <select name="range" defaultValue={range} aria-label="ช่วงเวลา" className="field w-auto min-h-11 py-0">
             {Object.entries(RANGES).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
           </select>
@@ -53,7 +54,7 @@ export default async function DashboardPage({
           <button type="submit" className="btn btn-ghost">กรอง</button>
           <a href={`/api/export?${qs}`} className="btn btn-outline">ส่งออก Excel</a>
           <Link href={`/admin/report?${qs}`} className="btn btn-primary">ส่งออก PDF</Link>
-        </form>
+        </Form>
       </div>
 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">

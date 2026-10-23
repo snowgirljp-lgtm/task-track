@@ -21,9 +21,17 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // getClaims ตรวจลายเซ็น token ในเครื่องได้เลย (เร็ว) ถ้าโปรเจกต์ใช้ signing key แบบใหม่
+  // ถ้าไม่รองรับ จะถามเซิร์ฟเวอร์ Supabase แทนเหมือนเดิม
+  let user: unknown = null;
+  const auth = supabase.auth as any;
+  if (typeof auth.getClaims === "function") {
+    const { data } = await auth.getClaims();
+    user = data?.claims?.sub ? data.claims : null;
+  } else {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  }
 
   const path = request.nextUrl.pathname;
   const isPublic = path.startsWith("/login") || path.startsWith("/auth") || path.startsWith("/privacy");
