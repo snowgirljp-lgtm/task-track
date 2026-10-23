@@ -123,8 +123,8 @@ export default async function TaskListPage({
       </Form>
 
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
-        {STATUS_ORDER.map((s) => chip(s, STATUS[s].label))}
         {chip("all", "ทั้งหมด")}
+        {STATUS_ORDER.map((s) => chip(s, STATUS[s].label))}
       </div>
 
       {tasks.length === 0 ? (
