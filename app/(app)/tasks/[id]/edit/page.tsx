@@ -13,7 +13,7 @@ export default async function EditTaskPage({ params }: { params: Promise<{ id: s
   const supabase = await createClient();
   const { data: task } = await supabase
     .from("tasks")
-    .select("id, code, title, detail, category_id, urgency, company_id, project_id, due_date, status")
+    .select("id, code, title, detail, category_id, urgency, company_id, project_id, due_date, status, doc_date, doc_no, po_no, amount")
     .eq("id", id)
     .maybeSingle();
   if (!task) notFound();

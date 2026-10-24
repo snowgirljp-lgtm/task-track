@@ -26,6 +26,10 @@ type Initial = {
   company_id: string;
   project_id: string;
   due_date: string;
+  doc_date: string | null;
+  doc_no: string | null;
+  po_no: string | null;
+  amount: number | null;
 };
 
 type Props = {
@@ -47,6 +51,10 @@ export default function TaskForm({ companies, projects, categories, initial, ima
   const [companyId, setCompanyId] = useState(initial?.company_id ?? "");
   const [projectId, setProjectId] = useState(initial?.project_id ?? "");
   const [dueDate, setDueDate] = useState(initial?.due_date ?? "");
+  const [docDate, setDocDate] = useState(initial?.doc_date ?? "");
+  const [docNo, setDocNo] = useState(initial?.doc_no ?? "");
+  const [poNo, setPoNo] = useState(initial?.po_no ?? "");
+  const [amount, setAmount] = useState(initial?.amount != null ? String(initial.amount) : "");
   const [kept, setKept] = useState<Existing[]>(images);
   const [files, setFiles] = useState<{ file: File; preview: string }[]>([]);
   const [busy, setBusy] = useState(false);
@@ -73,8 +81,13 @@ export default function TaskForm({ companies, projects, categories, initial, ima
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!categoryId || !companyId || !projectId || !dueDate) {
-      setError("กรุณากรอกข้อมูลให้ครบทุกช่อง");
+    const amountNum = Number(amount.replace(/,/g, ""));
+    if (!categoryId || !companyId || !projectId || !dueDate || !docDate || !docNo.trim() || amount.trim() === "") {
+      setError("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบ");
+      return;
+    }
+    if (!Number.isFinite(amountNum) || amountNum < 0) {
+      setError("จำนวนเงินไม่ถูกต้อง");
       return;
     }
     if (total < 1) {
@@ -91,6 +104,10 @@ export default function TaskForm({ companies, projects, categories, initial, ima
       company_id: companyId,
       project_id: projectId,
       due_date: dueDate,
+      doc_date: docDate,
+      doc_no: docNo.trim(),
+      po_no: poNo.trim() || null,
+      amount: amountNum,
     };
 
     let taskId = initial?.id;
@@ -127,17 +144,85 @@ export default function TaskForm({ companies, projects, categories, initial, ima
   }
 
   return (
-    <form onSubmit={submit} className="flex flex-col gap-5 max-w-xl">
+    <form onSubmit={submit} className="flex flex-col gap-5 max-w-3xl">
+      {/* 1. หัวข้อปัญหา */}
       <div>
         <label htmlFor="title" className="label req">หัวข้อปัญหา</label>
-        <input id="title" required className="field" placeholder="เช่น ไฟดับชั้น 3" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <input id="title" required className="field" value={title} onChange={(e) => setTitle(e.target.value)} />
       </div>
 
+      {/* 2. รายละเอียด */}
       <div>
-        <label htmlFor="detail" className="label req">รายละเอียด</label>
-        <textarea id="detail" required rows={4} className="field resize-y" placeholder="อธิบายปัญหาที่พบ" value={detail} onChange={(e) => setDetail(e.target.value)} />
+        <label htmlFor="detail" className="label req">
+          รายละเอียด <span className="font-normal text-[13px] text-muted">(อธิบายสาเหตุ เช่น คนขับลงของผิดไซต์งาน รับสินค้ากลับทันที)</span>
+        </label>
+        <textarea id="detail" required rows={4} className="field resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} />
       </div>
 
+      {/* 3. วันที่เอกสาร/วันที่เกิดเหตุ */}
+      <div className="sm:max-w-[calc(50%-6px)]">
+        <label htmlFor="docdate" className="label req">วันที่เอกสาร/วันที่เกิดเหตุ</label>
+        <input id="docdate" type="date" required className="field" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
+      </div>
+
+      {/* 4. บริษัท + โครงการ */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <label htmlFor="co" className="label req">บริษัท</label>
+          <select
+            id="co"
+            required
+            className="field"
+            value={companyId}
+            onChange={(e) => { setCompanyId(e.target.value); setProjectId(""); }}
+          >
+            <option value="">เลือกบริษัท</option>
+            {companyOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="min-w-0">
+          <label htmlFor="proj" className="label req">โครงการ</label>
+          <select id="proj" required disabled={!companyId} className="field disabled:bg-canvas" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
+            <option value="">{companyId ? "เลือกโครงการ" : "เลือกบริษัทก่อน"}</option>
+            {projectOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
+          </select>
+        </div>
+      </div>
+
+      {/* 5. ประเภทบิล + เลขที่เอกสาร + เลขที่ PO */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+        <div className="col-span-2 sm:col-span-1 min-w-0">
+          <label htmlFor="cat" className="label req">ประเภทบิล</label>
+          <select id="cat" required className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <option value="">เลือกประเภทบิล</option>
+            {categoryOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
+        <div className="min-w-0">
+          <label htmlFor="docno" className="label req">เลขที่เอกสาร</label>
+          <input id="docno" required className="field" value={docNo} onChange={(e) => setDocNo(e.target.value)} />
+        </div>
+        <div className="min-w-0">
+          <label htmlFor="pono" className="label">เลขที่ PO</label>
+          <input id="pono" className="field" value={poNo} onChange={(e) => setPoNo(e.target.value)} />
+        </div>
+      </div>
+
+      {/* 6. จำนวนเงิน */}
+      <div className="sm:max-w-[calc(50%-6px)]">
+        <label htmlFor="amount" className="label req">จำนวนเงิน (บาท)</label>
+        <input
+          id="amount"
+          required
+          inputMode="decimal"
+          className="field text-right tabular-nums"
+          placeholder="0.00"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value.replace(/[^0-9.,]/g, ""))}
+        />
+      </div>
+
+      {/* 7. รูปภาพ */}
       <div>
         <div className="flex justify-between items-baseline mb-2">
           <span className="label req mb-0">รูปภาพ</span>
@@ -160,59 +245,31 @@ export default function TaskForm({ companies, projects, categories, initial, ima
         </div>
       </div>
 
-      <div>
-        <label htmlFor="cat" className="label req">หมวดหมู่</label>
-        <select id="cat" required className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-          <option value="">เลือกหมวดหมู่</option>
-          {categoryOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
-
-      <fieldset>
-        <legend className="label req">ความเร่งด่วน</legend>
-        <div className="grid grid-cols-3 gap-2">
-          {(Object.keys(URGENCY) as Urgency[]).map((u) => (
-            <button
-              key={u}
-              type="button"
-              aria-pressed={urgency === u}
-              onClick={() => setUrgency(u)}
-              className={`h-11 rounded-xl text-[15px] ${urgency === u ? "border-2 border-brand bg-brand-soft text-[#1446A0] font-semibold" : "border border-field bg-white"}`}
-            >
-              {URGENCY[u].label}
-            </button>
-          ))}
+      {/* 8. ความเร่งด่วน + วันที่ครบกำหนดส่ง */}
+      <div className="flex flex-col gap-2">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <fieldset className="min-w-0">
+            <legend className="label req">ความเร่งด่วน</legend>
+            <div className="grid grid-cols-3 gap-2">
+              {(Object.keys(URGENCY) as Urgency[]).map((u) => (
+                <button
+                  key={u}
+                  type="button"
+                  aria-pressed={urgency === u}
+                  onClick={() => setUrgency(u)}
+                  className={`h-12 rounded-xl text-[15px] ${urgency === u ? "border-2 border-brand bg-brand-soft text-[#1446A0] font-semibold" : "border border-field bg-white"}`}
+                >
+                  {URGENCY[u].label}
+                </button>
+              ))}
+            </div>
+          </fieldset>
+          <div className="min-w-0">
+            <label htmlFor="due" className="label req">วันที่ครบกำหนดส่ง</label>
+            <input id="due" type="date" required className="field" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
         </div>
-      </fieldset>
-
-      <div>
-        <label htmlFor="co" className="label req">บริษัท</label>
-        <select
-          id="co"
-          required
-          className="field"
-          value={companyId}
-          onChange={(e) => { setCompanyId(e.target.value); setProjectId(""); }}
-        >
-          <option value="">เลือกบริษัท</option>
-          {companyOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="proj" className="label req">
-          โครงการ <span className="font-normal text-[13px] text-muted">(ตามบริษัทที่เลือก)</span>
-        </label>
-        <select id="proj" required disabled={!companyId} className="field disabled:bg-canvas" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-          <option value="">{companyId ? "เลือกโครงการ" : "เลือกบริษัทก่อน"}</option>
-          {projectOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-        </select>
-      </div>
-
-      <div>
-        <label htmlFor="due" className="label req">วันที่ครบกำหนดส่ง</label>
-        <input id="due" type="date" required className="field" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
-        <div className="mt-2 rounded-xl bg-[#FEF3F2] border border-[#F5C2BD] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#B42318]">
+        <div className="rounded-xl bg-[#FEF3F2] border border-[#F5C2BD] px-3.5 py-2.5 text-[13px] leading-relaxed text-[#B42318]">
           <div className="font-semibold mb-0.5">หมายเหตุ</div>
           <ol className="list-decimal pl-5">
             {DUE_NOTES.map((n) => <li key={n}>{n}</li>)}

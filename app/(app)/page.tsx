@@ -14,6 +14,8 @@ type Row = {
   status: Status;
   urgency: Urgency;
   due_date: string;
+  doc_no: string | null;
+  po_no: string | null;
   company: { name: string } | null;
   project: { name: string } | null;
   category: { name: string } | null;
@@ -37,7 +39,7 @@ export default async function TaskListPage({
   let query = supabase
     .from("tasks")
     .select(
-      "id, code, title, status, urgency, due_date, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name)"
+      "id, code, title, status, urgency, due_date, company:companies(name), project:projects(name), doc_no, po_no, category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name)"
     )
     .order("created_at", { ascending: false })
     .limit(500);
@@ -65,7 +67,7 @@ export default async function TaskListPage({
   const tasks = ((data ?? []) as unknown as Row[]).filter(
     (t) =>
       !term ||
-      [t.title, t.code, t.company?.name, t.project?.name, t.category?.name, t.department?.name].some((v) => v?.toLowerCase().includes(term))
+      [t.title, t.code, t.company?.name, t.project?.name, t.category?.name, t.department?.name, t.doc_no, t.po_no].some((v) => v?.toLowerCase().includes(term))
   );
 
   const chip = (value: string, label: string) => {
@@ -124,7 +126,7 @@ export default async function TaskListPage({
           type="search"
           name="q"
           defaultValue={q}
-          placeholder="ค้นหาหัวข้อ, รหัสงาน, บริษัท, โครงการ"
+          placeholder="ค้นหาหัวข้อ, เลขที่เอกสาร, PO, บริษัท, โครงการ"
           aria-label="ค้นหางาน"
           className="flex-1 bg-transparent outline-none text-[15px]"
         />
@@ -150,7 +152,7 @@ export default async function TaskListPage({
                 <div className="text-base font-semibold leading-snug">{t.title}</div>
                 <div className="text-[13px] text-muted">
                   {isAdmin && t.department?.name && <span className="font-semibold text-[#1446A0]">{t.department.name} · </span>}
-                  {t.company?.name} › {t.project?.name} · {t.category?.name}
+                  {t.company?.name} › {t.project?.name} · {t.category?.name}{t.doc_no ? ` · ${t.doc_no}` : ""}
                 </div>
                 <div className="flex justify-between text-[13px] text-muted border-t border-[#EEF1F5] pt-2">
                   <span className={late ? "text-danger font-semibold" : ""}>

@@ -17,6 +17,10 @@ export type ReportRow = {
   created_at: string;
   updated_at: string;
   company_id: string;
+  doc_date: string | null;
+  doc_no: string | null;
+  po_no: string | null;
+  amount: number | null;
   company: { name: string } | null;
   project: { name: string } | null;
   category: { name: string } | null;
@@ -42,7 +46,7 @@ export async function loadReport(f: Filters): Promise<ReportRow[]> {
   let query = supabase
     .from("tasks")
     .select(
-      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, company_id, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, company_id, doc_date, doc_no, po_no, amount, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .order("created_at", { ascending: false })
     .limit(5000);
@@ -58,6 +62,6 @@ export async function loadReport(f: Filters): Promise<ReportRow[]> {
   const term = f.q?.trim().toLowerCase();
   if (!term) return rows;
   return rows.filter((t) =>
-    [t.title, t.code, t.company?.name, t.project?.name, t.category?.name, t.department?.name].some((v) => v?.toLowerCase().includes(term))
+    [t.title, t.code, t.company?.name, t.project?.name, t.category?.name, t.department?.name, t.doc_no, t.po_no].some((v) => v?.toLowerCase().includes(term))
   );
 }

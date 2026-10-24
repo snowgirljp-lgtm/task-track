@@ -2,7 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadTaskImages } from "@/lib/images";
-import { STATUS, URGENCY, fmtDate, fmtDateTime } from "@/lib/labels";
+import { STATUS, URGENCY, fmtDate, fmtDateTime, fmtMoney } from "@/lib/labels";
 import type { Status, Urgency } from "@/lib/types";
 import AutoPrint from "@/components/AutoPrint";
 
@@ -13,7 +13,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
   const { data } = await supabase
     .from("tasks")
     .select(
-      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, doc_date, doc_no, po_no, amount, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -29,7 +29,11 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
     ["แผนก", t.department?.name ?? "-"],
     ["บริษัท", t.company?.name ?? "-"],
     ["โครงการ", t.project?.name ?? "-"],
-    ["หมวดหมู่", t.category?.name ?? "-"],
+    ["วันที่เอกสาร/วันที่เกิดเหตุ", fmtDate(t.doc_date)],
+    ["ประเภทบิล", t.category?.name ?? "-"],
+    ["เลขที่เอกสาร", t.doc_no || "-"],
+    ["เลขที่ PO", t.po_no || "-"],
+    ["จำนวนเงิน", fmtMoney(t.amount)],
     ["วันที่ครบกำหนดส่ง", fmtDate(t.due_date)],
     ["ผู้แจ้ง", `${t.reporter?.full_name ?? "-"} (${fmtDateTime(t.created_at)})`],
     ["ผู้รับผิดชอบ", t.owner?.full_name ?? "-"],

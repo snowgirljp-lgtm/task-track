@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadTaskImages } from "@/lib/images";
-import { FIELD, STATUS, URGENCY, fmtDate, fmtDateTime, isOverdue } from "@/lib/labels";
+import { FIELD, STATUS, URGENCY, fmtDate, fmtDateTime, fmtMoney, isOverdue } from "@/lib/labels";
 import type { Status, Urgency } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import TaskActions from "@/components/TaskActions";
@@ -49,7 +49,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
   const { data: task } = await supabase
     .from("tasks")
     .select(
-      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, doc_date, doc_no, po_no, amount, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -102,7 +102,11 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
             ["แผนก", t.department?.name ?? "-"],
             ["บริษัท", t.company?.name],
             ["โครงการ", t.project?.name],
-            ["หมวดหมู่", t.category?.name],
+            ["วันที่เอกสาร/เกิดเหตุ", fmtDate(t.doc_date)],
+            ["ประเภทบิล", t.category?.name],
+            ["เลขที่เอกสาร", t.doc_no || "-"],
+            ["เลขที่ PO", t.po_no || "-"],
+            ["จำนวนเงิน", fmtMoney(t.amount)],
             ["วันที่ครบกำหนดส่ง", fmtDate(t.due_date)],
             ["ผู้รับผิดชอบ", t.owner?.full_name ?? "ยังไม่มีผู้รับ"],
             ["ผู้แจ้ง", `${t.reporter?.full_name ?? "-"} · ${fmtDateTime(t.created_at)}`],

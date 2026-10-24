@@ -362,15 +362,15 @@ export function CompanyPanel({
 export function CategoryPanel({ categories, counts }: { categories: Named[]; counts: Record<string, number> }) {
   return (
     <section className="card p-5 flex flex-col gap-3">
-      <h2 className="text-lg font-bold">หมวดหมู่ปัญหา</h2>
+      <h2 className="text-lg font-bold">ประเภทบิล</h2>
       {categories.map((c) => (
         <div key={c.id} className="border border-line rounded-[10px] px-2.5 py-2">
           <EditableRow table="categories" item={c} count={counts[c.id] ?? 0} small />
         </div>
       ))}
-      <AddForm placeholder="ชื่อหมวดหมู่ใหม่" onAdd={(n) => addItem("categories", n)} />
+      <AddForm placeholder="ชื่อประเภทบิลใหม่" onAdd={(n) => addItem("categories", n)} />
       <p className="text-xs text-muted leading-relaxed">
-        หมวดหมู่ที่ใช้งานแล้วลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม แต่จะไม่มีให้เลือกตอนแจ้งปัญหาใหม่
+        ประเภทบิลที่ใช้งานแล้วลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม แต่จะไม่มีให้เลือกตอนแจ้งปัญหาใหม่
       </p>
     </section>
   );

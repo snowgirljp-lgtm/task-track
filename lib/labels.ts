@@ -26,7 +26,11 @@ export const ROLE: Record<Role, string> = {
 export const FIELD: Record<string, string> = {
   title: "หัวข้อ",
   detail: "รายละเอียด",
-  category_id: "หมวดหมู่",
+  category_id: "ประเภทบิล",
+  doc_date: "วันที่เอกสาร/วันที่เกิดเหตุ",
+  doc_no: "เลขที่เอกสาร",
+  po_no: "เลขที่ PO",
+  amount: "จำนวนเงิน",
   urgency: "ความเร่งด่วน",
   company_id: "บริษัท",
   project_id: "โครงการ",
@@ -50,6 +54,11 @@ export function fmtDateTime(d?: string | null) {
     minute: "2-digit",
     timeZone: TZ,
   });
+}
+
+export function fmtMoney(n?: number | string | null) {
+  if (n === null || n === undefined || n === "") return "-";
+  return Number(n).toLocaleString("th-TH", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " บาท";
 }
 
 /** วันนี้ตามเวลาไทย รูปแบบ YYYY-MM-DD */
