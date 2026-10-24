@@ -26,7 +26,8 @@ export const ROLE: Record<Role, string> = {
 export const FIELD: Record<string, string> = {
   title: "หัวข้อ",
   detail: "รายละเอียด",
-  category_id: "ประเภทบิล",
+  category_id: "หมวดหมู่",
+  bill_type_id: "ประเภทบิล",
   doc_date: "วันที่เอกสาร/วันที่เกิดเหตุ",
   doc_no: "เลขที่เอกสาร",
   po_no: "เลขที่ PO",

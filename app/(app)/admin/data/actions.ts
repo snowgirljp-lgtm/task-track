@@ -54,7 +54,7 @@ export async function setUserActive(id: string, active: boolean): Promise<Result
 }
 
 // ---------- บริษัท / โครงการ / หมวดหมู่ ----------
-type Table = "companies" | "projects" | "categories" | "departments";
+type Table = "companies" | "projects" | "categories" | "departments" | "bill_types";
 
 export async function addItem(table: Table, name: string, companyId?: string): Promise<Result> {
   const n = clean(name);

@@ -241,7 +241,7 @@ function EditableRow({
   small,
   extra,
 }: {
-  table: "companies" | "projects" | "categories" | "departments";
+  table: "companies" | "projects" | "categories" | "departments" | "bill_types";
   item: Named;
   count?: number;
   small?: boolean;
@@ -362,15 +362,15 @@ export function CompanyPanel({
 export function CategoryPanel({ categories, counts }: { categories: Named[]; counts: Record<string, number> }) {
   return (
     <section className="card p-5 flex flex-col gap-3">
-      <h2 className="text-lg font-bold">ประเภทบิล</h2>
+      <h2 className="text-lg font-bold">หมวดหมู่ปัญหา</h2>
       {categories.map((c) => (
         <div key={c.id} className="border border-line rounded-[10px] px-2.5 py-2">
           <EditableRow table="categories" item={c} count={counts[c.id] ?? 0} small />
         </div>
       ))}
-      <AddForm placeholder="ชื่อประเภทบิลใหม่" onAdd={(n) => addItem("categories", n)} />
+      <AddForm placeholder="ชื่อหมวดหมู่ใหม่" onAdd={(n) => addItem("categories", n)} />
       <p className="text-xs text-muted leading-relaxed">
-        ประเภทบิลที่ใช้งานแล้วลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม แต่จะไม่มีให้เลือกตอนแจ้งปัญหาใหม่
+        หมวดหมู่ที่ใช้งานแล้วลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม แต่จะไม่มีให้เลือกตอนแจ้งปัญหาใหม่
       </p>
     </section>
   );
@@ -405,6 +405,25 @@ export function DepartmentPanel({
       {departments.length === 0 && <p className="text-sm text-muted">ยังไม่มีแผนก เพิ่มแผนกแรกด้านล่าง</p>}
       <AddForm placeholder="ชื่อแผนกใหม่" onAdd={(n) => addItem("departments", n)} />
       <p className="text-xs text-muted leading-relaxed">ลบไม่ได้ ให้กด "ปิดใช้" แทน · ปิดใช้แผนกแล้ว คนในแผนกยังเห็นงานเดิมได้</p>
+    </section>
+  );
+}
+
+// =====================================================================
+// ประเภทบิล
+// =====================================================================
+export function BillTypePanel({ billTypes, counts }: { billTypes: Named[]; counts: Record<string, number> }) {
+  return (
+    <section className="card p-5 flex flex-col gap-3">
+      <h2 className="text-lg font-bold">ประเภทบิล</h2>
+      {billTypes.map((c) => (
+        <div key={c.id} className="border border-line rounded-[10px] px-2.5 py-2">
+          <EditableRow table="bill_types" item={c} count={counts[c.id] ?? 0} small />
+        </div>
+      ))}
+      {billTypes.length === 0 && <p className="text-sm text-muted">ยังไม่มีประเภทบิล เพิ่มรายการแรกด้านล่าง</p>}
+      <AddForm placeholder="ชื่อประเภทบิลใหม่" onAdd={(n) => addItem("bill_types", n)} />
+      <p className="text-xs text-muted leading-relaxed">ลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม</p>
     </section>
   );
 }

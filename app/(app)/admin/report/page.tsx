@@ -45,7 +45,7 @@ export default async function ReportPage({
       <table className="w-full text-[12px] border-collapse">
         <thead>
           <tr className="text-left bg-[#F4F6FA]">
-            {["รหัส", "หัวข้อ", "แผนก", "บริษัท", "โครงการ", "ประเภทบิล", "เลขที่เอกสาร", "ด่วน", "ครบกำหนดส่ง", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
+            {["รหัส", "หัวข้อ", "แผนก", "บริษัท", "โครงการ", "หมวดหมู่", "ประเภทบิล", "เลขที่เอกสาร", "ด่วน", "ครบกำหนดส่ง", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
               <th key={h} className="py-1.5 px-1.5 font-semibold border-b border-line">{h}</th>
             ))}
           </tr>
@@ -59,6 +59,7 @@ export default async function ReportPage({
               <td className="py-1.5 px-1.5">{t.company?.name}</td>
               <td className="py-1.5 px-1.5">{t.project?.name}</td>
               <td className="py-1.5 px-1.5">{t.category?.name}</td>
+              <td className="py-1.5 px-1.5">{t.bill_type?.name ?? "-"}</td>
               <td className="py-1.5 px-1.5">{t.doc_no ?? "-"}</td>
               <td className="py-1.5 px-1.5">{URGENCY[t.urgency].label}</td>
               <td className="py-1.5 px-1.5 whitespace-nowrap">{fmtDate(t.due_date)}</td>
@@ -67,7 +68,7 @@ export default async function ReportPage({
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr><td colSpan={11} className="py-3 text-muted">ไม่มีงานในช่วงนี้</td></tr>
+            <tr><td colSpan={12} className="py-3 text-muted">ไม่มีงานในช่วงนี้</td></tr>
           )}
         </tbody>
       </table>

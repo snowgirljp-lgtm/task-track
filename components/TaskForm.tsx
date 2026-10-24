@@ -22,6 +22,7 @@ type Initial = {
   title: string;
   detail: string;
   category_id: string;
+  bill_type_id: string | null;
   urgency: Urgency;
   company_id: string;
   project_id: string;
@@ -36,17 +37,19 @@ type Props = {
   companies: Named[];
   projects: Project[];
   categories: Named[];
+  billTypes?: Named[];
   initial?: Initial;
   images?: Existing[];
 };
 
-export default function TaskForm({ companies, projects, categories, initial, images = [] }: Props) {
+export default function TaskForm({ companies, projects, categories, billTypes = [], initial, images = [] }: Props) {
   const router = useRouter();
   const editing = !!initial;
 
   const [title, setTitle] = useState(initial?.title ?? "");
   const [detail, setDetail] = useState(initial?.detail ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
+  const [billTypeId, setBillTypeId] = useState(initial?.bill_type_id ?? "");
   const [urgency, setUrgency] = useState<Urgency>(initial?.urgency ?? "medium");
   const [companyId, setCompanyId] = useState(initial?.company_id ?? "");
   const [projectId, setProjectId] = useState(initial?.project_id ?? "");
@@ -64,6 +67,7 @@ export default function TaskForm({ companies, projects, categories, initial, ima
   const keep = <T extends Named>(list: T[], current?: string) => list.filter((x) => x.is_active || x.id === current);
   const companyOptions = keep(companies, initial?.company_id);
   const categoryOptions = keep(categories, initial?.category_id);
+  const billTypeOptions = keep(billTypes, initial?.bill_type_id ?? undefined);
   const projectOptions = useMemo(
     () => keep(projects, initial?.project_id).filter((p) => p.company_id === companyId),
     [projects, companyId, initial?.project_id]
@@ -82,7 +86,7 @@ export default function TaskForm({ companies, projects, categories, initial, ima
     e.preventDefault();
     setError(null);
     const amountNum = Number(amount.replace(/,/g, ""));
-    if (!categoryId || !companyId || !projectId || !dueDate || !docDate || !docNo.trim() || amount.trim() === "") {
+    if (!categoryId || !billTypeId || !companyId || !projectId || !dueDate || !docDate || !docNo.trim() || amount.trim() === "") {
       setError("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบ");
       return;
     }
@@ -100,6 +104,7 @@ export default function TaskForm({ companies, projects, categories, initial, ima
       title: title.trim(),
       detail: detail.trim(),
       category_id: categoryId,
+      bill_type_id: billTypeId,
       urgency,
       company_id: companyId,
       project_id: projectId,
@@ -159,10 +164,19 @@ export default function TaskForm({ companies, projects, categories, initial, ima
         <textarea id="detail" required rows={4} className="field resize-y" value={detail} onChange={(e) => setDetail(e.target.value)} />
       </div>
 
-      {/* 3. วันที่เอกสาร/วันที่เกิดเหตุ */}
-      <div className="sm:max-w-[calc(50%-6px)]">
-        <label htmlFor="docdate" className="label req">วันที่เอกสาร/วันที่เกิดเหตุ</label>
-        <input id="docdate" type="date" required className="field" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
+      {/* 3. วันที่เอกสาร/วันที่เกิดเหตุ + หมวดหมู่ */}
+      <div className="grid grid-cols-2 gap-3">
+        <div className="min-w-0">
+          <label htmlFor="docdate" className="label req">วันที่เอกสาร/วันที่เกิดเหตุ</label>
+          <input id="docdate" type="date" required className="field" value={docDate} onChange={(e) => setDocDate(e.target.value)} />
+        </div>
+        <div className="min-w-0">
+          <label htmlFor="cat" className="label req">หมวดหมู่</label>
+          <select id="cat" required className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
+            <option value="">เลือกหมวดหมู่</option>
+            {categoryOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </div>
       </div>
 
       {/* 4. บริษัท + โครงการ */}
@@ -192,10 +206,10 @@ export default function TaskForm({ companies, projects, categories, initial, ima
       {/* 5. ประเภทบิล + เลขที่เอกสาร + เลขที่ PO */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         <div className="col-span-2 sm:col-span-1 min-w-0">
-          <label htmlFor="cat" className="label req">ประเภทบิล</label>
-          <select id="cat" required className="field" value={categoryId} onChange={(e) => setCategoryId(e.target.value)}>
-            <option value="">เลือกประเภทบิล</option>
-            {categoryOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          <label htmlFor="bill" className="label req">ประเภทบิล</label>
+          <select id="bill" required className="field" value={billTypeId} onChange={(e) => setBillTypeId(e.target.value)}>
+            <option value="">{billTypeOptions.length ? "เลือกประเภทบิล" : "ยังไม่มีรายการ (ให้ Admin เพิ่ม)"}</option>
+            {billTypeOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </div>
         <div className="min-w-0">

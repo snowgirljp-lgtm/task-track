@@ -22,6 +22,7 @@ export async function GET(request: NextRequest) {
     department: sp.get("department") ?? undefined,
     status: sp.get("status") ?? undefined,
     q: sp.get("q") ?? undefined,
+    overdue: sp.get("overdue") === "1",
   });
 
   const wb = new ExcelJS.Workbook();
@@ -32,7 +33,8 @@ export async function GET(request: NextRequest) {
     { header: "หัวข้อ", key: "title", width: 32 },
     { header: "รายละเอียด", key: "detail", width: 40 },
     { header: "วันที่เอกสาร/เกิดเหตุ", key: "doc_date", width: 18 },
-    { header: "ประเภทบิล", key: "category", width: 14 },
+    { header: "หมวดหมู่", key: "category", width: 14 },
+    { header: "ประเภทบิล", key: "bill_type", width: 14 },
     { header: "เลขที่เอกสาร", key: "doc_no", width: 16 },
     { header: "เลขที่ PO", key: "po_no", width: 16 },
     { header: "จำนวนเงิน", key: "amount", width: 14, style: { numFmt: "#,##0.00" } },
@@ -56,6 +58,7 @@ export async function GET(request: NextRequest) {
       detail: t.detail,
       doc_date: t.doc_date ?? "",
       category: t.category?.name ?? "",
+      bill_type: t.bill_type?.name ?? "",
       doc_no: t.doc_no ?? "",
       po_no: t.po_no ?? "",
       amount: t.amount != null ? Number(t.amount) : null,

@@ -13,7 +13,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
   const { data } = await supabase
     .from("tasks")
     .select(
-      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, doc_date, doc_no, po_no, amount, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, doc_date, doc_no, po_no, amount, company:companies(name), project:projects(name), category:categories(name), bill_type:bill_types(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -30,7 +30,8 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
     ["บริษัท", t.company?.name ?? "-"],
     ["โครงการ", t.project?.name ?? "-"],
     ["วันที่เอกสาร/วันที่เกิดเหตุ", fmtDate(t.doc_date)],
-    ["ประเภทบิล", t.category?.name ?? "-"],
+    ["หมวดหมู่", t.category?.name ?? "-"],
+    ["ประเภทบิล", t.bill_type?.name ?? "-"],
     ["เลขที่เอกสาร", t.doc_no || "-"],
     ["เลขที่ PO", t.po_no || "-"],
     ["จำนวนเงิน", fmtMoney(t.amount)],
