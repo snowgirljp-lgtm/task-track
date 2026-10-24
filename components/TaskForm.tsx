@@ -7,6 +7,7 @@ import { URGENCY, friendlyError } from "@/lib/labels";
 import type { Named, Project, Urgency } from "@/lib/types";
 import { shrink } from "@/lib/shrink";
 import { Camera, X } from "./icons";
+import SearchSelect from "./SearchSelect";
 
 const MAX_IMAGES = 5;
 
@@ -183,23 +184,27 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
       <div className="grid grid-cols-2 gap-3">
         <div className="min-w-0">
           <label htmlFor="co" className="label req">บริษัท</label>
-          <select
+          <SearchSelect
             id="co"
             required
-            className="field"
             value={companyId}
-            onChange={(e) => { setCompanyId(e.target.value); setProjectId(""); }}
-          >
-            <option value="">เลือกบริษัท</option>
-            {companyOptions.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
-          </select>
+            options={companyOptions}
+            placeholder="พิมพ์ค้นหาบริษัท"
+            onChange={(v) => { if (v !== companyId) { setCompanyId(v); setProjectId(""); } }}
+          />
         </div>
         <div className="min-w-0">
           <label htmlFor="proj" className="label req">โครงการ</label>
-          <select id="proj" required disabled={!companyId} className="field disabled:bg-canvas" value={projectId} onChange={(e) => setProjectId(e.target.value)}>
-            <option value="">{companyId ? "เลือกโครงการ" : "เลือกบริษัทก่อน"}</option>
-            {projectOptions.map((p) => <option key={p.id} value={p.id}>{p.name}</option>)}
-          </select>
+          <SearchSelect
+            id="proj"
+            required
+            disabled={!companyId}
+            value={projectId}
+            options={projectOptions}
+            placeholder={companyId ? "พิมพ์ค้นหาโครงการ" : "เลือกบริษัทก่อน"}
+            emptyText="ไม่พบโครงการในบริษัทนี้"
+            onChange={setProjectId}
+          />
         </div>
       </div>
 

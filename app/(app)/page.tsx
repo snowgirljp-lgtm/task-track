@@ -2,7 +2,7 @@ import Link from "next/link";
 import Form from "next/form";
 import { requireProfile } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
-import { STATUS, STATUS_ORDER, URGENCY, fmtDate, isOverdue, todayTH } from "@/lib/labels";
+import { STATUS, STATUS_CHIP, STATUS_ORDER, URGENCY, fmtDate, isOverdue, todayTH } from "@/lib/labels";
 import type { Status, Urgency } from "@/lib/types";
 import StatusBadge from "@/components/StatusBadge";
 import { Chevron, Plus, Search } from "@/components/icons";
@@ -52,7 +52,7 @@ export default async function TaskListPage({
   }
 
   // ดึงพร้อมกันทั้งหมด
-  const [{ data }, { data: latest }, { count: unread }, { count: overdueCount }] = await Promise.all([
+  const [{ data }, { data: latest }, { count: unread }, { data: overdueRows }] = await Promise.all([
     query,
     supabase
       .from("notifications")
@@ -68,11 +68,15 @@ export default async function TaskListPage({
       .is("read_at", null),
     supabase
       .from("tasks")
-      .select("id", { count: "exact", head: true })
+      .select("id, title, status, due_date, company:companies(name), project:projects(name), owner:profiles!tasks_owner_id_fkey(full_name)")
       .lt("due_date", today)
-      .not("status", "in", "(done,cancelled)"),
+      .not("status", "in", "(done,cancelled)")
+      .order("due_date", { ascending: true })
+      .limit(100),
   ]);
-  const overdue = overdueCount ?? 0;
+  type LateRow = { id: string; title: string; status: Status; due_date: string; company: { name: string } | null; project: { name: string } | null; owner: { full_name: string } | null };
+  const lateList = (overdueRows ?? []) as unknown as LateRow[];
+  const overdue = lateList.length;
   const daysLate = (due: string) => Math.round((Date.parse(today) - Date.parse(due)) / 86400000);
 
   const isAdmin = profile.role === "admin";
@@ -85,6 +89,10 @@ export default async function TaskListPage({
 
   const chip = (value: string, label: string) => {
     const on = status === value;
+    const colors = STATUS_CHIP[value as Status];
+    const cls = colors
+      ? on ? colors[1] : colors[0]
+      : on ? "bg-brand text-white border-brand" : "bg-white text-ink border-field";
     const params = new URLSearchParams();
     params.set("status", value);
     if (q) params.set("q", q);
@@ -92,7 +100,7 @@ export default async function TaskListPage({
       <Link
         key={value}
         href={`/?${params.toString()}`}
-        className={`shrink-0 h-9 px-3.5 rounded-full text-sm font-medium flex items-center border ${on ? "bg-brand text-white border-brand" : "bg-white text-ink border-field"}`}
+        className={`shrink-0 h-9 px-3.5 rounded-full text-sm flex items-center border ${on ? "font-bold shadow-sm" : "font-medium"} ${cls}`}
       >
         {label}
       </Link>
@@ -119,16 +127,6 @@ export default async function TaskListPage({
         <div className="rounded-xl bg-[#FFF1D6] border border-[#F3D9A8] text-[#7A4A00] px-3.5 py-2.5 text-sm">
           บัญชีของคุณยังไม่มีแผนก ตอนนี้จะเห็นเฉพาะงานที่คุณแจ้งเอง กรุณาติดต่อ Admin
         </div>
-      )}
-
-      {overdue > 0 && status !== "overdue" && (
-        <Link href="/?status=overdue" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#FEF3F2] border border-[#F5C2BD] text-[#B42318]">
-          <span className="shrink-0 min-w-7 h-7 px-1.5 rounded-full bg-[#B42318] text-white text-sm font-bold flex items-center justify-center">{overdue}</span>
-          <span className="flex-1 text-sm leading-relaxed">
-            <b>งานเลยกำหนดส่ง {overdue} งาน</b> · กดเพื่อดูรายการ
-          </span>
-          <Chevron size={18} />
-        </Link>
       )}
 
       {(unread ?? 0) > 0 && (
@@ -158,15 +156,6 @@ export default async function TaskListPage({
       <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 md:mx-0 md:px-0">
         {chip("all", "ทั้งหมด")}
         {STATUS_ORDER.map((s) => chip(s, STATUS[s].label))}
-        <Link
-          href={`/?${new URLSearchParams({ status: "overdue", ...(q ? { q } : {}) }).toString()}`}
-          className={`shrink-0 h-9 px-3.5 rounded-full text-sm font-semibold flex items-center gap-1.5 border ${status === "overdue" ? "bg-[#B42318] text-white border-[#B42318]" : "bg-white text-[#B42318] border-[#F5C2BD]"}`}
-        >
-          เลยกำหนดส่ง
-          {overdue > 0 && (
-            <span className={`min-w-5 h-5 px-1 rounded-full text-xs font-bold flex items-center justify-center ${status === "overdue" ? "bg-white text-[#B42318]" : "bg-[#B42318] text-white"}`}>{overdue}</span>
-          )}
-        </Link>
       </div>
 
       {tasks.length === 0 ? (
@@ -204,6 +193,23 @@ export default async function TaskListPage({
             );
           })}
         </div>
+      )}
+
+      {status !== "overdue" && (
+        <section className="card p-5 flex flex-col gap-1 mt-2">
+          <h2 className="text-lg font-bold text-danger mb-2">เลยกำหนดส่ง ({overdue})</h2>
+          {overdue === 0 && <p className="text-sm text-muted">ไม่มีงานเลยกำหนดส่ง</p>}
+          {lateList.map((t) => (
+            <Link key={t.id} href={`/tasks/${t.id}`} className="flex flex-wrap justify-between gap-x-3 gap-y-1 text-sm py-2.5 border-b border-[#EEF1F5] last:border-b-0 hover:bg-canvas -mx-2 px-2 rounded-lg">
+              <span className="font-medium">{t.title}</span>
+              <span className="text-muted">
+                {t.company?.name} › {t.project?.name} · กำหนด {fmtDate(t.due_date)} ·{" "}
+                <span className="text-danger font-semibold">เลย {daysLate(t.due_date)} วัน</span> · {STATUS[t.status].label}
+                {t.owner?.full_name ? ` · ${t.owner.full_name}` : ""}
+              </span>
+            </Link>
+          ))}
+        </section>
       )}
 
       <Link
