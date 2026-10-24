@@ -52,7 +52,7 @@ export default async function TaskListPage({
   }
 
   // ดึงพร้อมกันทั้งหมด
-  const [{ data }, { data: latest }, { count: unread }, { data: overdueRows }] = await Promise.all([
+  const [{ data }, { data: latest }, { count: unread }, { data: overdueRows }, { data: statusRows }] = await Promise.all([
     query,
     supabase
       .from("notifications")
@@ -73,7 +73,14 @@ export default async function TaskListPage({
       .not("status", "in", "(done,cancelled)")
       .order("due_date", { ascending: true })
       .limit(100),
+    // จำนวนงานของแต่ละสถานะ (เฉพาะงานที่ผู้ใช้มองเห็น)
+    supabase.from("tasks").select("status").limit(20000),
   ]);
+  const counts: Record<string, number> = { all: 0 };
+  for (const r of statusRows ?? []) {
+    counts[r.status] = (counts[r.status] ?? 0) + 1;
+    counts.all++;
+  }
   type LateRow = { id: string; title: string; status: Status; due_date: string; company: { name: string } | null; project: { name: string } | null; owner: { full_name: string } | null };
   const lateList = (overdueRows ?? []) as unknown as LateRow[];
   const overdue = lateList.length;
@@ -103,6 +110,11 @@ export default async function TaskListPage({
         className={`shrink-0 h-9 px-3.5 rounded-full text-sm flex items-center border ${on ? "font-bold shadow-sm" : "font-medium"} ${cls}`}
       >
         {label}
+        <span
+          className={`ml-1.5 min-w-6 h-6 px-1.5 rounded-full text-xs font-bold flex items-center justify-center ${on ? "bg-white/25" : "bg-black/[0.07]"}`}
+        >
+          {counts[value] ?? 0}
+        </span>
       </Link>
     );
   };
