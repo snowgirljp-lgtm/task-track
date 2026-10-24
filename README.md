@@ -18,7 +18,7 @@
 
 > รันไฟล์นี้ครั้งเดียวเท่านั้น ถ้ารันซ้ำจะขึ้น error ว่ามีตารางอยู่แล้ว (ไม่เสียหาย)
 
-4. ทำแบบเดียวกันกับไฟล์ `0002_solution_images.sql` (รูปหลังแก้) `0003_admin_review_only.sql`, `0004_notify_rules.sql`, `0005_redo_owner_only.sql` (กติกาแจ้งเตือน) , `0006_admin_delete_task.sql` (Admin ลบงาน) , `0007_departments.sql` (แผนก) และ `0008_document_fields.sql` (ข้อมูลเอกสาร) ตามลำดับ
+4. ทำแบบเดียวกันกับไฟล์ `0002_solution_images.sql` (รูปหลังแก้) `0003_admin_review_only.sql`, `0004_notify_rules.sql`, `0005_redo_owner_only.sql` (กติกาแจ้งเตือน) , `0006_admin_delete_task.sql` (Admin ลบงาน) , `0007_departments.sql` (แผนก) , `0008_document_fields.sql` (ข้อมูลเอกสาร) และ `0009_bill_types.sql` (ประเภทบิล) ตามลำดับ
 
 ### 2. เปิดการเข้าระบบด้วย Google
 
