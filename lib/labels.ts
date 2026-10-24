@@ -3,7 +3,7 @@ import type { Role, Status, Urgency } from "./types";
 export const STATUS: Record<Status, { label: string; cls: string }> = {
   pending: { label: "รอดำเนินการ", cls: "bg-[#EEF1F5] text-[#3D4756]" },
   in_progress: { label: "กำลังทำ", cls: "bg-[#DCE8FF] text-[#1446A0]" },
-  review: { label: "รอตรวจ", cls: "bg-[#FFF1D6] text-[#7A4A00]" },
+  review: { label: "รอตรวจ", cls: "bg-[#FFF7C2] text-[#6B5300]" },
   redo: { label: "แก้ไขใหม่", cls: "bg-[#FFE2D6] text-[#9A360A]" },
   done: { label: "เสร็จแล้ว", cls: "bg-[#DDF3E6] text-[#17663A]" },
   cancelled: { label: "ยกเลิก", cls: "bg-[#E5E7EB] text-[#4B5563]" },
@@ -13,7 +13,7 @@ export const STATUS: Record<Status, { label: string; cls: string }> = {
 export const STATUS_CHIP: Partial<Record<Status, [string, string]>> = {
   pending: ["bg-[#EEF1F5] text-[#3D4756] border-[#C9D2DF]", "bg-[#3D4756] text-white border-[#3D4756]"],
   in_progress: ["bg-[#DCE8FF] text-[#1446A0] border-[#A9C3F5]", "bg-[#1F4FD1] text-white border-[#1F4FD1]"],
-  review: ["bg-[#FFF1D6] text-[#7A4A00] border-[#F0CF8E]", "bg-[#B7791F] text-white border-[#B7791F]"],
+  review: ["bg-[#FFFBE0] text-[#6B5300] border-[#F5E39A]", "bg-[#FFEC99] text-[#4D3B00] border-[#E8CF5C]"],
   redo: ["bg-[#FFE2D6] text-[#9A360A] border-[#F5B99D]", "bg-[#C2410C] text-white border-[#C2410C]"],
 };
 

@@ -21,7 +21,7 @@ const ROLES: Role[] = ["reporter", "resolver", "admin"];
 const clean = (s: string) => s.trim().replace(/\s+/g, " ");
 
 // ---------- ผู้ใช้ ----------
-export async function inviteUser(email: string, fullName: string, role: Role, departmentId: string | null): Promise<Result> {
+export async function inviteUser(email: string, fullName: string, role: Role, departmentIds: string[]): Promise<Result> {
   const e = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return { error: "รูปแบบอีเมลไม่ถูกต้อง" };
   if (!clean(fullName)) return { error: "กรุณาใส่ชื่อ" };
@@ -29,7 +29,7 @@ export async function inviteUser(email: string, fullName: string, role: Role, de
   const db = await createClient();
   const { data: exists } = await db.from("profiles").select("id").eq("email", e).maybeSingle();
   if (exists) return { error: "อีเมลนี้มีบัญชีอยู่แล้ว" };
-  return run((d) => d.from("allowed_emails").insert({ email: e, full_name: clean(fullName), role, department_id: departmentId || null }));
+  return run((d) => d.from("allowed_emails").insert({ email: e, full_name: clean(fullName), role, department_ids: departmentIds }));
 }
 
 export async function removeInvite(email: string): Promise<Result> {
@@ -41,12 +41,17 @@ export async function setUserRole(id: string, role: Role): Promise<Result> {
   return run((d) => d.from("profiles").update({ role }).eq("id", id));
 }
 
-export async function setUserDepartment(id: string, departmentId: string | null): Promise<Result> {
-  return run((d) => d.from("profiles").update({ department_id: departmentId || null }).eq("id", id));
+/** เพิ่ม/เอาออก ผู้ใช้จากแผนก */
+export async function toggleUserDepartment(userId: string, departmentId: string, on: boolean): Promise<Result> {
+  return run((d) =>
+    on
+      ? d.from("user_departments").upsert({ user_id: userId, department_id: departmentId }, { ignoreDuplicates: true })
+      : d.from("user_departments").delete().eq("user_id", userId).eq("department_id", departmentId)
+  );
 }
 
-export async function setInviteDepartment(email: string, departmentId: string | null): Promise<Result> {
-  return run((d) => d.from("allowed_emails").update({ department_id: departmentId || null }).eq("email", email));
+export async function setInviteDepartments(email: string, departmentIds: string[]): Promise<Result> {
+  return run((d) => d.from("allowed_emails").update({ department_ids: departmentIds }).eq("email", email));
 }
 
 export async function setUserActive(id: string, active: boolean): Promise<Result> {

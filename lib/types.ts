@@ -9,6 +9,7 @@ export type Profile = {
   role: Role;
   is_active: boolean;
   department_id?: string | null;
+  department_ids?: string[];
 };
 
 export type Named = { id: string; name: string; is_active: boolean };

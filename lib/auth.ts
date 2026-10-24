@@ -12,12 +12,12 @@ export const getProfile = cache(async (): Promise<Profile | null> => {
   } = await supabase.auth.getSession();
   const userId = session?.user?.id;
   if (!userId) return null;
-  const { data } = await supabase
-    .from("profiles")
-    .select("*")
-    .eq("id", userId)
-    .maybeSingle();
-  return (data as Profile) ?? null;
+  const [{ data }, { data: deps }] = await Promise.all([
+    supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+    supabase.from("user_departments").select("department_id").eq("user_id", userId),
+  ]);
+  if (!data) return null;
+  return { ...(data as Profile), department_ids: (deps ?? []).map((d) => d.department_id as string) };
 });
 
 export async function requireProfile() {

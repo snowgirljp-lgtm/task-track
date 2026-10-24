@@ -5,8 +5,12 @@ import TaskForm from "@/components/TaskForm";
 import { Back } from "@/components/icons";
 
 export default async function NewTaskPage() {
-  await requireProfile();
+  const profile = await requireProfile();
   const data = await loadMasterData();
+  // Admin เลือกได้ทุกแผนก / คนอื่นเลือกได้เฉพาะแผนกที่สังกัด
+  const departmentChoices = data.departments.filter(
+    (d) => d.is_active && (profile.role === "admin" || (profile.department_ids ?? []).includes(d.id))
+  );
   return (
     <div className="flex flex-col gap-5">
       <div className="flex items-center gap-2">
@@ -16,7 +20,7 @@ export default async function NewTaskPage() {
       {data.companies.filter((c) => c.is_active).length === 0 ? (
         <div className="card p-6 text-muted">ยังไม่มีบริษัทในระบบ กรุณาให้ Admin เพิ่มบริษัทและโครงการก่อน</div>
       ) : (
-        <TaskForm {...data} />
+        <TaskForm {...data} departmentChoices={departmentChoices} />
       )}
     </div>
   );

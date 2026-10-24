@@ -9,13 +9,14 @@ import {
   inviteUser,
   removeInvite,
   renameItem,
-  setInviteDepartment,
+  setInviteDepartments,
   setItemActive,
   setUserActive,
-  setUserDepartment,
+  toggleUserDepartment,
   setUserRole,
   type Result,
 } from "./actions";
+import { importCompaniesProjects, type ImportResult } from "./import";
 
 /** เรียก server action แล้วแสดง error */
 function useAction() {
@@ -41,29 +42,41 @@ const pill = (on: boolean) =>
 // =====================================================================
 // ผู้ใช้
 // =====================================================================
-function DeptSelect({
+/** เลือกได้หลายแผนก — กดป้ายเพื่อเพิ่ม/เอาออก */
+function DeptToggles({
   value,
   departments,
-  onChange,
+  onToggle,
   disabled,
   label,
-  className = "h-9 rounded-lg border border-field bg-white px-2 text-sm",
-  id,
 }: {
-  value: string | null | undefined;
+  value: string[];
   departments: Named[];
-  onChange: (v: string | null) => void;
+  onToggle: (id: string, on: boolean) => void;
   disabled?: boolean;
   label: string;
-  className?: string;
-  id?: string;
 }) {
-  const options = departments.filter((d) => d.is_active || d.id === value);
+  const options = departments.filter((d) => d.is_active || value.includes(d.id));
+  if (options.length === 0) return <span className="text-[13px] text-muted">ยังไม่มีแผนก</span>;
   return (
-    <select id={id} aria-label={label} disabled={disabled} className={className} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
-      <option value="">— ไม่มีแผนก —</option>
-      {options.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
-    </select>
+    <div role="group" aria-label={label} className="flex flex-wrap gap-1.5">
+      {options.map((d) => {
+        const on = value.includes(d.id);
+        return (
+          <button
+            key={d.id}
+            type="button"
+            aria-pressed={on}
+            disabled={disabled}
+            onClick={() => onToggle(d.id, !on)}
+            className={`h-8 px-2.5 rounded-full text-[13px] border ${on ? "bg-brand-soft border-brand text-[#1446A0] font-semibold" : "bg-white border-field text-muted"}`}
+          >
+            {on ? "✓ " : "+ "}
+            {d.name}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -75,16 +88,16 @@ export function UserPanel({
 }: {
   meId: string;
   users: Profile[];
-  pending: { email: string; full_name: string; role: Role; department_id: string | null }[];
+  pending: { email: string; full_name: string; role: Role; department_ids: string[] }[];
   departments: Named[];
 }) {
   const { pending: busy, error, exec } = useAction();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("reporter");
-  const [dept, setDept] = useState<string | null>(null);
+  const [depts, setDepts] = useState<string[]>([]);
   const [open, setOpen] = useState(false);
-  const noDept = users.filter((u) => u.is_active && u.role !== "admin" && !u.department_id).length;
+  const noDept = users.filter((u) => u.is_active && u.role !== "admin" && !(u.department_ids ?? []).length).length;
 
   return (
     <section className="card p-5 flex flex-col gap-3">
@@ -94,23 +107,23 @@ export function UserPanel({
           <p className="text-[13px] text-muted">
             เฉพาะ Gmail ที่ "ใช้งาน" เท่านั้นที่เข้าระบบได้ · ผู้ที่ถูกระงับจะเข้าไม่ได้ทันที แต่งานและประวัติเดิมยังอยู่ครบ
           </p>
-          <p className="text-[13px] text-muted">ผู้ใช้เห็นเฉพาะงานของแผนกตัวเอง (และงานที่ตัวเองแจ้ง) · Admin เห็นทุกแผนก</p>
+          <p className="text-[13px] text-muted">ผู้ใช้อยู่ได้หลายแผนก และเห็นงานของทุกแผนกที่สังกัด (และงานที่ตัวเองแจ้ง) · Admin เห็นทุกแผนก</p>
         </div>
         <button type="button" onClick={() => setOpen((v) => !v)} className="btn btn-primary">+ เพิ่มผู้ใช้</button>
       </div>
 
       {noDept > 0 && (
         <div className="rounded-xl bg-[#FFF1D6] text-[#7A4A00] px-3.5 py-2.5 text-sm">
-          มีผู้ใช้ {noDept} คนที่ยังไม่มีแผนก — จะเห็นเฉพาะงานที่ตัวเองแจ้ง กรุณาเลือกแผนกในตารางด้านล่าง
+          มีผู้ใช้ {noDept} คนที่ยังไม่มีแผนก — จะเห็นเฉพาะงานที่ตัวเองแจ้ง กรุณากดเลือกแผนกในตารางด้านล่าง
         </div>
       )}
 
       {open && (
         <form
-          className="grid sm:grid-cols-[1.4fr_1fr_auto_auto_auto] gap-2 items-end bg-canvas rounded-xl p-3"
+          className="grid sm:grid-cols-[1.4fr_1fr_auto] gap-2 items-end bg-canvas rounded-xl p-3"
           onSubmit={(e) => {
             e.preventDefault();
-            exec(() => inviteUser(email, name, role, dept), () => { setEmail(""); setName(""); setRole("reporter"); setDept(null); setOpen(false); });
+            exec(() => inviteUser(email, name, role, depts), () => { setEmail(""); setName(""); setRole("reporter"); setDepts([]); setOpen(false); });
           }}
         >
           <div>
@@ -127,18 +140,23 @@ export function UserPanel({
               {(Object.keys(ROLE) as Role[]).map((r) => <option key={r} value={r}>{ROLE[r]}</option>)}
             </select>
           </div>
-          <div>
-            <label htmlFor="inv-dept" className="label text-sm">แผนก</label>
-            <DeptSelect id="inv-dept" label="แผนก" value={dept} departments={departments} onChange={setDept} className="field min-h-10" />
+          <div className="sm:col-span-3">
+            <span className="label text-sm">แผนก (เลือกได้หลายแผนก)</span>
+            <DeptToggles
+              label="แผนกของผู้ใช้ใหม่"
+              value={depts}
+              departments={departments}
+              onToggle={(id, on) => setDepts((d) => (on ? [...d, id] : d.filter((x) => x !== id)))}
+            />
           </div>
-          <button type="submit" disabled={busy} className="btn btn-primary min-h-10">บันทึก</button>
+          <button type="submit" disabled={busy} className="btn btn-primary min-h-10 sm:col-span-3 sm:justify-self-start">บันทึก</button>
         </form>
       )}
 
       <ErrorText error={error} />
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[760px] text-sm border-collapse">
+        <table className="w-full min-w-[860px] text-sm border-collapse">
           <thead>
             <tr className="text-left text-muted">
               {["ชื่อ", "Gmail", "บทบาท", "แผนก", "สถานะ"].map((h) => (
@@ -168,12 +186,12 @@ export function UserPanel({
                     {u.role === "admin" ? (
                       <span className="text-muted text-[13px]">เห็นทุกแผนก</span>
                     ) : (
-                      <DeptSelect
+                      <DeptToggles
                         label={`แผนกของ ${u.full_name}`}
-                        value={u.department_id}
+                        value={u.department_ids ?? []}
                         departments={departments}
                         disabled={busy}
-                        onChange={(v) => exec(() => setUserDepartment(u.id, v))}
+                        onToggle={(id, on) => exec(() => toggleUserDepartment(u.id, id, on))}
                       />
                     )}
                   </td>
@@ -201,12 +219,14 @@ export function UserPanel({
                 <td className="py-2.5 px-1.5 text-muted">{p.email}</td>
                 <td className="py-2.5 px-1.5">{ROLE[p.role]}</td>
                 <td className="py-2.5 px-1.5">
-                  <DeptSelect
+                  <DeptToggles
                     label={`แผนกของ ${p.full_name}`}
-                    value={p.department_id}
+                    value={p.department_ids ?? []}
                     departments={departments}
                     disabled={busy}
-                    onChange={(v) => exec(() => setInviteDepartment(p.email, v))}
+                    onToggle={(id, on) =>
+                      exec(() => setInviteDepartments(p.email, on ? [...(p.department_ids ?? []), id] : (p.department_ids ?? []).filter((x) => x !== id)))
+                    }
                   />
                 </td>
                 <td className="py-2.5 px-1.5">
@@ -327,6 +347,7 @@ export function CompanyPanel({
   return (
     <section className="card p-5 flex flex-col gap-3">
       <h2 className="text-lg font-bold">บริษัท และ โครงการ</h2>
+      <ImportBox />
       <AddForm placeholder="ชื่อบริษัทใหม่" onAdd={(n) => addItem("companies", n)} />
       {companies.length === 0 && <p className="text-sm text-muted">ยังไม่มีบริษัท</p>}
       {companies.map((c) => (
@@ -425,5 +446,70 @@ export function BillTypePanel({ billTypes, counts }: { billTypes: Named[]; count
       <AddForm placeholder="ชื่อประเภทบิลใหม่" onAdd={(n) => addItem("bill_types", n)} />
       <p className="text-xs text-muted leading-relaxed">ลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม</p>
     </section>
+  );
+}
+
+// =====================================================================
+// นำเข้าบริษัทและโครงการจาก Excel
+// =====================================================================
+function ImportBox() {
+  const [pending, start] = useTransition();
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [fileName, setFileName] = useState("");
+
+  return (
+    <form
+      className="rounded-xl bg-canvas border border-dashed border-[#9FB2D3] p-3.5 flex flex-col gap-2.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        const fd = new FormData(e.currentTarget);
+        const form = e.currentTarget;
+        setResult(null);
+        start(async () => {
+          const r = await importCompaniesProjects(fd);
+          setResult(r);
+          if (!r.error) {
+            form.reset();
+            setFileName("");
+          }
+        });
+      }}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="text-sm font-semibold">นำเข้าจากไฟล์ Excel</span>
+        <a href="/api/import-template" className="text-sm font-semibold text-brand underline">ดาวน์โหลดไฟล์ตัวอย่าง</a>
+      </div>
+      <p className="text-xs text-muted leading-relaxed">
+        ไฟล์ .xlsx มี 2 คอลัมน์ คือ <b>บริษัท</b> และ <b>โครงการ</b> (1 แถว = 1 โครงการ) · ข้อมูลที่มีอยู่แล้วจะถูกข้าม
+      </p>
+      <div className="flex flex-wrap items-center gap-2">
+        <label className="btn btn-ghost min-h-10 text-sm cursor-pointer">
+          เลือกไฟล์
+          <input
+            type="file"
+            name="file"
+            accept=".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+            className="sr-only"
+            onChange={(e) => { setFileName(e.target.files?.[0]?.name ?? ""); setResult(null); }}
+          />
+        </label>
+        <span className="text-sm text-muted truncate max-w-[50%]">{fileName || "ยังไม่ได้เลือกไฟล์"}</span>
+        <button type="submit" disabled={pending || !fileName} className="btn btn-primary min-h-10 text-sm ml-auto">
+          {pending ? "กำลังนำเข้า..." : "นำเข้า"}
+        </button>
+      </div>
+      {result?.error && <div role="alert" className="text-sm text-danger">{result.error}</div>}
+      {result && !result.error && (
+        <div role="status" className="rounded-lg bg-[#DDF3E6] text-[#17663A] px-3 py-2 text-sm leading-relaxed">
+          นำเข้าเรียบร้อย อ่านได้ {result.rows} แถว · เพิ่มบริษัทใหม่ {result.companiesAdded} · เพิ่มโครงการใหม่ {result.projectsAdded}
+          {result.skipped ? ` · ข้าม ${result.skipped} โครงการที่มีอยู่แล้ว` : ""}
+          {result.problems?.length ? (
+            <ul className="mt-1 text-[#7A4A00] list-disc pl-5">
+              {result.problems.map((p) => <li key={p}>{p}</li>)}
+            </ul>
+          ) : null}
+        </div>
+      )}
+    </form>
   );
 }

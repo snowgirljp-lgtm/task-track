@@ -180,7 +180,7 @@ export default function TaskActions({ taskId, status, solution: initialSolution,
       )}
 
       {status === "review" && !isAdmin && (
-        <div className="rounded-[14px] bg-[#FFF1D6] text-[#7A4A00] px-4 py-3 text-sm font-medium">รอ Admin ตรวจงาน</div>
+        <div className="rounded-[14px] bg-[#FFF7C2] text-[#6B5300] px-4 py-3 text-sm font-medium">รอ Admin ตรวจงาน</div>
       )}
 
       {isAdmin && !closed && (

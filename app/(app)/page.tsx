@@ -123,7 +123,7 @@ export default async function TaskListPage({
         </div>
       </div>
 
-      {!isAdmin && !profile.department_id && (
+      {!isAdmin && !(profile.department_ids ?? []).length && (
         <div className="rounded-xl bg-[#FFF1D6] border border-[#F3D9A8] text-[#7A4A00] px-3.5 py-2.5 text-sm">
           บัญชีของคุณยังไม่มีแผนก ตอนนี้จะเห็นเฉพาะงานที่คุณแจ้งเอง กรุณาติดต่อ Admin
         </div>

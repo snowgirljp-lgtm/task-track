@@ -32,6 +32,7 @@ type Initial = {
   doc_no: string | null;
   po_no: string | null;
   amount: number | null;
+  department_id?: string | null;
 };
 
 type Props = {
@@ -39,11 +40,13 @@ type Props = {
   projects: Project[];
   categories: Named[];
   billTypes?: Named[];
+  /** แผนกที่ให้เลือก — แสดงช่องเมื่อมีมากกว่า 1 แผนก */
+  departmentChoices?: Named[];
   initial?: Initial;
   images?: Existing[];
 };
 
-export default function TaskForm({ companies, projects, categories, billTypes = [], initial, images = [] }: Props) {
+export default function TaskForm({ companies, projects, categories, billTypes = [], departmentChoices = [], initial, images = [] }: Props) {
   const router = useRouter();
   const editing = !!initial;
 
@@ -51,6 +54,8 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
   const [detail, setDetail] = useState(initial?.detail ?? "");
   const [categoryId, setCategoryId] = useState(initial?.category_id ?? "");
   const [billTypeId, setBillTypeId] = useState(initial?.bill_type_id ?? "");
+  const showDept = departmentChoices.length > 1;
+  const [departmentId, setDepartmentId] = useState(initial?.department_id ?? (departmentChoices.length === 1 ? departmentChoices[0].id : ""));
   const [urgency, setUrgency] = useState<Urgency>(initial?.urgency ?? "medium");
   const [companyId, setCompanyId] = useState(initial?.company_id ?? "");
   const [projectId, setProjectId] = useState(initial?.project_id ?? "");
@@ -87,7 +92,7 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
     e.preventDefault();
     setError(null);
     const amountNum = Number(amount.replace(/,/g, ""));
-    if (!categoryId || !billTypeId || !companyId || !projectId || !dueDate || !docDate || !docNo.trim() || amount.trim() === "") {
+    if ((showDept && !departmentId) || !categoryId || !billTypeId || !companyId || !projectId || !dueDate || !docDate || !docNo.trim() || amount.trim() === "") {
       setError("กรุณากรอกข้อมูลที่มีเครื่องหมาย * ให้ครบ");
       return;
     }
@@ -114,6 +119,7 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
       doc_no: docNo.trim(),
       po_no: poNo.trim() || null,
       amount: amountNum,
+      ...(departmentId ? { department_id: departmentId } : {}),
     };
 
     let taskId = initial?.id;
@@ -151,6 +157,16 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
 
   return (
     <form onSubmit={submit} className="flex flex-col gap-5 max-w-3xl">
+      {showDept && (
+        <div className="sm:max-w-[calc(50%-6px)]">
+          <label htmlFor="dept" className="label req">แผนก</label>
+          <select id="dept" required className="field" value={departmentId} onChange={(e) => setDepartmentId(e.target.value)}>
+            <option value="">เลือกแผนก</option>
+            {departmentChoices.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+          </select>
+        </div>
+      )}
+
       {/* 1. หัวข้อปัญหา */}
       <div>
         <label htmlFor="title" className="label req">หัวข้อปัญหา</label>
