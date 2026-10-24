@@ -17,6 +17,7 @@ type Row = {
   company: { name: string } | null;
   project: { name: string } | null;
   category: { name: string } | null;
+  department: { name: string } | null;
   owner: { full_name: string } | null;
 };
 
@@ -36,7 +37,7 @@ export default async function TaskListPage({
   let query = supabase
     .from("tasks")
     .select(
-      "id, code, title, status, urgency, due_date, company:companies(name), project:projects(name), category:categories(name), owner:profiles!tasks_owner_id_fkey(full_name)"
+      "id, code, title, status, urgency, due_date, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name)"
     )
     .order("created_at", { ascending: false })
     .limit(500);
@@ -59,11 +60,12 @@ export default async function TaskListPage({
       .is("read_at", null),
   ]);
 
+  const isAdmin = profile.role === "admin";
   const term = q.trim().toLowerCase();
   const tasks = ((data ?? []) as unknown as Row[]).filter(
     (t) =>
       !term ||
-      [t.title, t.code, t.company?.name, t.project?.name, t.category?.name].some((v) => v?.toLowerCase().includes(term))
+      [t.title, t.code, t.company?.name, t.project?.name, t.category?.name, t.department?.name].some((v) => v?.toLowerCase().includes(term))
   );
 
   const chip = (value: string, label: string) => {
@@ -97,6 +99,12 @@ export default async function TaskListPage({
           </Link>
         </div>
       </div>
+
+      {!isAdmin && !profile.department_id && (
+        <div className="rounded-xl bg-[#FFF1D6] border border-[#F3D9A8] text-[#7A4A00] px-3.5 py-2.5 text-sm">
+          บัญชีของคุณยังไม่มีแผนก ตอนนี้จะเห็นเฉพาะงานที่คุณแจ้งเอง กรุณาติดต่อ Admin
+        </div>
+      )}
 
       {(unread ?? 0) > 0 && (
         <Link href="/notifications" className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#FFF1E8] border border-[#F8C9A8] text-[#7C2D06]">
@@ -141,6 +149,7 @@ export default async function TaskListPage({
                 </div>
                 <div className="text-base font-semibold leading-snug">{t.title}</div>
                 <div className="text-[13px] text-muted">
+                  {isAdmin && t.department?.name && <span className="font-semibold text-[#1446A0]">{t.department.name} · </span>}
                   {t.company?.name} › {t.project?.name} · {t.category?.name}
                 </div>
                 <div className="flex justify-between text-[13px] text-muted border-t border-[#EEF1F5] pt-2">

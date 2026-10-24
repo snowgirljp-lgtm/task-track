@@ -19,6 +19,7 @@ export async function GET(request: NextRequest) {
   const rows = await loadReport({
     range: sp.get("range") ?? "all",
     company: sp.get("company") ?? undefined,
+    department: sp.get("department") ?? undefined,
     status: sp.get("status") ?? undefined,
     q: sp.get("q") ?? undefined,
   });
@@ -32,6 +33,7 @@ export async function GET(request: NextRequest) {
     { header: "รายละเอียด", key: "detail", width: 40 },
     { header: "หมวดหมู่", key: "category", width: 14 },
     { header: "ความเร่งด่วน", key: "urgency", width: 12 },
+    { header: "แผนก", key: "department", width: 16 },
     { header: "บริษัท", key: "company", width: 20 },
     { header: "โครงการ", key: "project", width: 20 },
     { header: "วันที่ครบกำหนดส่ง", key: "due", width: 18 },
@@ -50,6 +52,7 @@ export async function GET(request: NextRequest) {
       detail: t.detail,
       category: t.category?.name ?? "",
       urgency: URGENCY[t.urgency].label,
+      department: t.department?.name ?? "",
       company: t.company?.name ?? "",
       project: t.project?.name ?? "",
       due: t.due_date,

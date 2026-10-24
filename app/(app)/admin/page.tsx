@@ -8,16 +8,17 @@ import { STATUS, STATUS_ORDER, fmtDate, isOverdue } from "@/lib/labels";
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; company?: string }>;
+  searchParams: Promise<{ range?: string; company?: string; department?: string }>;
 }) {
   await requireAdmin();
-  const { range = "month", company = "" } = await searchParams;
+  const { range = "month", company = "", department = "" } = await searchParams;
   const supabase = await createClient();
   // งานที่ยังเปิดอยู่ทั้งหมด (ไม่จำกัดช่วงเวลา) ใช้สำหรับรายการรอตรวจ/เลยกำหนด — ดึงพร้อมกันทั้งหมด
-  const [{ data: companies }, rows, open] = await Promise.all([
+  const [{ data: companies }, { data: departments }, rows, open] = await Promise.all([
     supabase.from("companies").select("id, name").order("name"),
-    loadReport({ range, company }),
-    loadReport({ range: "all", company }),
+    supabase.from("departments").select("id, name").order("name"),
+    loadReport({ range, company, department }),
+    loadReport({ range: "all", company, department }),
   ]);
   const active = open.filter((t) => t.status !== "done" && t.status !== "cancelled");
   const review = active.filter((t) => t.status === "review");
@@ -34,7 +35,7 @@ export default async function DashboardPage({
   ).sort((a, b) => b.n - a.n);
   const maxCo = Math.max(1, ...byCompany.map((c) => c.n));
 
-  const qs = new URLSearchParams({ range, ...(company ? { company } : {}) }).toString();
+  const qs = new URLSearchParams({ range, ...(company ? { company } : {}), ...(department ? { department } : {}) }).toString();
 
   return (
     <div className="flex flex-col gap-6">
@@ -50,6 +51,10 @@ export default async function DashboardPage({
           <select name="company" defaultValue={company} aria-label="บริษัท" className="field w-auto min-h-11 py-0">
             <option value="">ทุกบริษัท</option>
             {(companies ?? []).map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+          <select name="department" defaultValue={department} aria-label="แผนก" className="field w-auto min-h-11 py-0">
+            <option value="">ทุกแผนก</option>
+            {(departments ?? []).map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
           </select>
           <button type="submit" className="btn btn-ghost">กรอง</button>
           <a href={`/api/export?${qs}`} className="btn btn-outline">ส่งออก Excel</a>

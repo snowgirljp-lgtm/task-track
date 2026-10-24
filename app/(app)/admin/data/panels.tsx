@@ -9,8 +9,10 @@ import {
   inviteUser,
   removeInvite,
   renameItem,
+  setInviteDepartment,
   setItemActive,
   setUserActive,
+  setUserDepartment,
   setUserRole,
   type Result,
 } from "./actions";
@@ -39,20 +41,50 @@ const pill = (on: boolean) =>
 // =====================================================================
 // ผู้ใช้
 // =====================================================================
+function DeptSelect({
+  value,
+  departments,
+  onChange,
+  disabled,
+  label,
+  className = "h-9 rounded-lg border border-field bg-white px-2 text-sm",
+  id,
+}: {
+  value: string | null | undefined;
+  departments: Named[];
+  onChange: (v: string | null) => void;
+  disabled?: boolean;
+  label: string;
+  className?: string;
+  id?: string;
+}) {
+  const options = departments.filter((d) => d.is_active || d.id === value);
+  return (
+    <select id={id} aria-label={label} disabled={disabled} className={className} value={value ?? ""} onChange={(e) => onChange(e.target.value || null)}>
+      <option value="">— ไม่มีแผนก —</option>
+      {options.map((d) => <option key={d.id} value={d.id}>{d.name}</option>)}
+    </select>
+  );
+}
+
 export function UserPanel({
   meId,
   users,
   pending,
+  departments,
 }: {
   meId: string;
   users: Profile[];
-  pending: { email: string; full_name: string; role: Role }[];
+  pending: { email: string; full_name: string; role: Role; department_id: string | null }[];
+  departments: Named[];
 }) {
   const { pending: busy, error, exec } = useAction();
   const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [role, setRole] = useState<Role>("reporter");
+  const [dept, setDept] = useState<string | null>(null);
   const [open, setOpen] = useState(false);
+  const noDept = users.filter((u) => u.is_active && u.role !== "admin" && !u.department_id).length;
 
   return (
     <section className="card p-5 flex flex-col gap-3">
@@ -62,16 +94,23 @@ export function UserPanel({
           <p className="text-[13px] text-muted">
             เฉพาะ Gmail ที่ "ใช้งาน" เท่านั้นที่เข้าระบบได้ · ผู้ที่ถูกระงับจะเข้าไม่ได้ทันที แต่งานและประวัติเดิมยังอยู่ครบ
           </p>
+          <p className="text-[13px] text-muted">ผู้ใช้เห็นเฉพาะงานของแผนกตัวเอง (และงานที่ตัวเองแจ้ง) · Admin เห็นทุกแผนก</p>
         </div>
         <button type="button" onClick={() => setOpen((v) => !v)} className="btn btn-primary">+ เพิ่มผู้ใช้</button>
       </div>
 
+      {noDept > 0 && (
+        <div className="rounded-xl bg-[#FFF1D6] text-[#7A4A00] px-3.5 py-2.5 text-sm">
+          มีผู้ใช้ {noDept} คนที่ยังไม่มีแผนก — จะเห็นเฉพาะงานที่ตัวเองแจ้ง กรุณาเลือกแผนกในตารางด้านล่าง
+        </div>
+      )}
+
       {open && (
         <form
-          className="grid sm:grid-cols-[1.4fr_1fr_auto_auto] gap-2 items-end bg-canvas rounded-xl p-3"
+          className="grid sm:grid-cols-[1.4fr_1fr_auto_auto_auto] gap-2 items-end bg-canvas rounded-xl p-3"
           onSubmit={(e) => {
             e.preventDefault();
-            exec(() => inviteUser(email, name, role), () => { setEmail(""); setName(""); setRole("reporter"); setOpen(false); });
+            exec(() => inviteUser(email, name, role, dept), () => { setEmail(""); setName(""); setRole("reporter"); setDept(null); setOpen(false); });
           }}
         >
           <div>
@@ -88,6 +127,10 @@ export function UserPanel({
               {(Object.keys(ROLE) as Role[]).map((r) => <option key={r} value={r}>{ROLE[r]}</option>)}
             </select>
           </div>
+          <div>
+            <label htmlFor="inv-dept" className="label text-sm">แผนก</label>
+            <DeptSelect id="inv-dept" label="แผนก" value={dept} departments={departments} onChange={setDept} className="field min-h-10" />
+          </div>
           <button type="submit" disabled={busy} className="btn btn-primary min-h-10">บันทึก</button>
         </form>
       )}
@@ -95,10 +138,10 @@ export function UserPanel({
       <ErrorText error={error} />
 
       <div className="overflow-x-auto">
-        <table className="w-full min-w-[620px] text-sm border-collapse">
+        <table className="w-full min-w-[760px] text-sm border-collapse">
           <thead>
             <tr className="text-left text-muted">
-              {["ชื่อ", "Gmail", "บทบาท", "สถานะ"].map((h) => (
+              {["ชื่อ", "Gmail", "บทบาท", "แผนก", "สถานะ"].map((h) => (
                 <th key={h} className="py-2 px-1.5 font-medium border-b border-line">{h}</th>
               ))}
             </tr>
@@ -120,6 +163,19 @@ export function UserPanel({
                     >
                       {(Object.keys(ROLE) as Role[]).map((r) => <option key={r} value={r}>{ROLE[r]}</option>)}
                     </select>
+                  </td>
+                  <td className="py-2.5 px-1.5">
+                    {u.role === "admin" ? (
+                      <span className="text-muted text-[13px]">เห็นทุกแผนก</span>
+                    ) : (
+                      <DeptSelect
+                        label={`แผนกของ ${u.full_name}`}
+                        value={u.department_id}
+                        departments={departments}
+                        disabled={busy}
+                        onChange={(v) => exec(() => setUserDepartment(u.id, v))}
+                      />
+                    )}
                   </td>
                   <td className="py-2.5 px-1.5">
                     <div className="flex items-center gap-2.5 flex-wrap">
@@ -144,6 +200,15 @@ export function UserPanel({
                 <td className="py-2.5 px-1.5 font-medium">{p.full_name}</td>
                 <td className="py-2.5 px-1.5 text-muted">{p.email}</td>
                 <td className="py-2.5 px-1.5">{ROLE[p.role]}</td>
+                <td className="py-2.5 px-1.5">
+                  <DeptSelect
+                    label={`แผนกของ ${p.full_name}`}
+                    value={p.department_id}
+                    departments={departments}
+                    disabled={busy}
+                    onChange={(v) => exec(() => setInviteDepartment(p.email, v))}
+                  />
+                </td>
                 <td className="py-2.5 px-1.5">
                   <div className="flex items-center gap-2.5 flex-wrap">
                     <span className="text-[13px] font-semibold px-2.5 py-0.5 rounded-[10px] bg-[#FFF1D6] text-[#7A4A00]">ยังไม่เคยเข้า</span>
@@ -176,7 +241,7 @@ function EditableRow({
   small,
   extra,
 }: {
-  table: "companies" | "projects" | "categories";
+  table: "companies" | "projects" | "categories" | "departments";
   item: Named;
   count?: number;
   small?: boolean;
@@ -307,6 +372,39 @@ export function CategoryPanel({ categories, counts }: { categories: Named[]; cou
       <p className="text-xs text-muted leading-relaxed">
         หมวดหมู่ที่ใช้งานแล้วลบไม่ได้ ให้กด "ปิดใช้" แทน งานเก่ายังแสดงชื่อเดิม แต่จะไม่มีให้เลือกตอนแจ้งปัญหาใหม่
       </p>
+    </section>
+  );
+}
+
+// =====================================================================
+// แผนก
+// =====================================================================
+export function DepartmentPanel({
+  departments,
+  taskCounts,
+  userCounts,
+}: {
+  departments: Named[];
+  taskCounts: Record<string, number>;
+  userCounts: Record<string, number>;
+}) {
+  return (
+    <section className="card p-5 flex flex-col gap-3">
+      <div>
+        <h2 className="text-lg font-bold">แผนก</h2>
+        <p className="text-[13px] text-muted">งานที่แจ้งจะเป็นของแผนกคนแจ้งโดยอัตโนมัติ</p>
+      </div>
+      <div className="grid sm:grid-cols-2 gap-2">
+        {departments.map((d) => (
+          <div key={d.id} className="border border-line rounded-[10px] px-2.5 py-2 flex flex-col gap-1">
+            <EditableRow table="departments" item={d} count={taskCounts[d.id] ?? 0} small />
+            <span className="text-xs text-muted pl-0.5">{userCounts[d.id] ?? 0} คน</span>
+          </div>
+        ))}
+      </div>
+      {departments.length === 0 && <p className="text-sm text-muted">ยังไม่มีแผนก เพิ่มแผนกแรกด้านล่าง</p>}
+      <AddForm placeholder="ชื่อแผนกใหม่" onAdd={(n) => addItem("departments", n)} />
+      <p className="text-xs text-muted leading-relaxed">ลบไม่ได้ ให้กด "ปิดใช้" แทน · ปิดใช้แผนกแล้ว คนในแผนกยังเห็นงานเดิมได้</p>
     </section>
   );
 }

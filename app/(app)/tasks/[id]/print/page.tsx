@@ -13,7 +13,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
   const { data } = await supabase
     .from("tasks")
     .select(
-      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, company:companies(name), project:projects(name), category:categories(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "code, title, detail, status, status_note, solution, urgency, due_date, created_at, updated_at, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -26,6 +26,7 @@ export default async function PrintTaskPage({ params }: { params: Promise<{ id: 
   const rows: [string, string][] = [
     ["สถานะ", STATUS[t.status as Status].label],
     ["ความเร่งด่วน", URGENCY[t.urgency as Urgency].label],
+    ["แผนก", t.department?.name ?? "-"],
     ["บริษัท", t.company?.name ?? "-"],
     ["โครงการ", t.project?.name ?? "-"],
     ["หมวดหมู่", t.category?.name ?? "-"],

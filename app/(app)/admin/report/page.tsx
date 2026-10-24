@@ -7,12 +7,15 @@ import AutoPrint from "@/components/AutoPrint";
 export default async function ReportPage({
   searchParams,
 }: {
-  searchParams: Promise<{ range?: string; company?: string }>;
+  searchParams: Promise<{ range?: string; company?: string; department?: string }>;
 }) {
   await requireAdmin();
-  const { range = "month", company = "" } = await searchParams;
+  const { range = "month", company = "", department = "" } = await searchParams;
   const supabase = await createClient();
-  const rows = await loadReport({ range, company });
+  const rows = await loadReport({ range, company, department });
+  const { data: dep } = department
+    ? await supabase.from("departments").select("name").eq("id", department).maybeSingle()
+    : { data: null };
   const { data: co } = company
     ? await supabase.from("companies").select("name").eq("id", company).maybeSingle()
     : { data: null };
@@ -23,7 +26,7 @@ export default async function ReportPage({
         <div>
           <div className="text-sm text-muted">Task Track · รายงานสรุป</div>
           <h1 className="text-2xl font-bold">
-            {RANGES[range] ?? RANGES.month} · {co?.name ?? "ทุกบริษัท"}
+            {RANGES[range] ?? RANGES.month} · {co?.name ?? "ทุกบริษัท"} · {dep?.name ?? "ทุกแผนก"}
           </h1>
           <div className="text-xs text-muted">พิมพ์เมื่อ {fmtDateTime(new Date().toISOString())}</div>
         </div>
@@ -42,7 +45,7 @@ export default async function ReportPage({
       <table className="w-full text-[12px] border-collapse">
         <thead>
           <tr className="text-left bg-[#F4F6FA]">
-            {["รหัส", "หัวข้อ", "บริษัท", "โครงการ", "หมวดหมู่", "ด่วน", "ครบกำหนดส่ง", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
+            {["รหัส", "หัวข้อ", "แผนก", "บริษัท", "โครงการ", "หมวดหมู่", "ด่วน", "ครบกำหนดส่ง", "สถานะ", "ผู้รับผิดชอบ"].map((h) => (
               <th key={h} className="py-1.5 px-1.5 font-semibold border-b border-line">{h}</th>
             ))}
           </tr>
@@ -52,6 +55,7 @@ export default async function ReportPage({
             <tr key={t.id} className="border-b border-[#EEF1F5] break-inside-avoid">
               <td className="py-1.5 px-1.5 whitespace-nowrap">{t.code}</td>
               <td className="py-1.5 px-1.5">{t.title}</td>
+              <td className="py-1.5 px-1.5">{t.department?.name ?? "-"}</td>
               <td className="py-1.5 px-1.5">{t.company?.name}</td>
               <td className="py-1.5 px-1.5">{t.project?.name}</td>
               <td className="py-1.5 px-1.5">{t.category?.name}</td>
@@ -62,7 +66,7 @@ export default async function ReportPage({
             </tr>
           ))}
           {rows.length === 0 && (
-            <tr><td colSpan={9} className="py-3 text-muted">ไม่มีงานในช่วงนี้</td></tr>
+            <tr><td colSpan={10} className="py-3 text-muted">ไม่มีงานในช่วงนี้</td></tr>
           )}
         </tbody>
       </table>

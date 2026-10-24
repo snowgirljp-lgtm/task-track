@@ -8,6 +8,7 @@ export type Profile = {
   full_name: string;
   role: Role;
   is_active: boolean;
+  department_id?: string | null;
 };
 
 export type Named = { id: string; name: string; is_active: boolean };

@@ -49,7 +49,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
   const { data: task } = await supabase
     .from("tasks")
     .select(
-      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, company:companies(name), project:projects(name), category:categories(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
+      "id, code, title, detail, status, status_note, solution, urgency, due_date, created_at, company:companies(name), project:projects(name), category:categories(name), department:departments(name), owner:profiles!tasks_owner_id_fkey(full_name), reporter:profiles!tasks_reporter_id_fkey(full_name)"
     )
     .eq("id", id)
     .maybeSingle();
@@ -99,6 +99,7 @@ export default async function TaskPage({ params }: { params: Promise<{ id: strin
         <p className="text-[15px] leading-relaxed text-[#2E3A4D] whitespace-pre-line">{t.detail}</p>
         <dl className="grid grid-cols-2 gap-3 text-sm border-t border-[#EEF1F5] pt-3">
           {[
+            ["แผนก", t.department?.name ?? "-"],
             ["บริษัท", t.company?.name],
             ["โครงการ", t.project?.name],
             ["หมวดหมู่", t.category?.name],

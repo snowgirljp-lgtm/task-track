@@ -21,7 +21,7 @@ const ROLES: Role[] = ["reporter", "resolver", "admin"];
 const clean = (s: string) => s.trim().replace(/\s+/g, " ");
 
 // ---------- ผู้ใช้ ----------
-export async function inviteUser(email: string, fullName: string, role: Role): Promise<Result> {
+export async function inviteUser(email: string, fullName: string, role: Role, departmentId: string | null): Promise<Result> {
   const e = email.trim().toLowerCase();
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e)) return { error: "รูปแบบอีเมลไม่ถูกต้อง" };
   if (!clean(fullName)) return { error: "กรุณาใส่ชื่อ" };
@@ -29,7 +29,7 @@ export async function inviteUser(email: string, fullName: string, role: Role): P
   const db = await createClient();
   const { data: exists } = await db.from("profiles").select("id").eq("email", e).maybeSingle();
   if (exists) return { error: "อีเมลนี้มีบัญชีอยู่แล้ว" };
-  return run((d) => d.from("allowed_emails").insert({ email: e, full_name: clean(fullName), role }));
+  return run((d) => d.from("allowed_emails").insert({ email: e, full_name: clean(fullName), role, department_id: departmentId || null }));
 }
 
 export async function removeInvite(email: string): Promise<Result> {
@@ -41,12 +41,20 @@ export async function setUserRole(id: string, role: Role): Promise<Result> {
   return run((d) => d.from("profiles").update({ role }).eq("id", id));
 }
 
+export async function setUserDepartment(id: string, departmentId: string | null): Promise<Result> {
+  return run((d) => d.from("profiles").update({ department_id: departmentId || null }).eq("id", id));
+}
+
+export async function setInviteDepartment(email: string, departmentId: string | null): Promise<Result> {
+  return run((d) => d.from("allowed_emails").update({ department_id: departmentId || null }).eq("email", email));
+}
+
 export async function setUserActive(id: string, active: boolean): Promise<Result> {
   return run((d) => d.from("profiles").update({ is_active: active }).eq("id", id));
 }
 
 // ---------- บริษัท / โครงการ / หมวดหมู่ ----------
-type Table = "companies" | "projects" | "categories";
+type Table = "companies" | "projects" | "categories" | "departments";
 
 export async function addItem(table: Table, name: string, companyId?: string): Promise<Result> {
   const n = clean(name);
