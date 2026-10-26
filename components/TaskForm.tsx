@@ -71,13 +71,40 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
 
   // แสดงเฉพาะที่เปิดใช้ (ยกเว้นค่าที่งานนี้เลือกไว้เดิม)
   const keep = <T extends Named>(list: T[], current?: string) => list.filter((x) => x.is_active || x.id === current);
-  const companyOptions = keep(companies, initial?.company_id);
+  const approved = (x: Named) => !x.approval || x.approval === "approved";
+  const companyOptions = keep(companies, initial?.company_id).filter((c) => approved(c) || c.id === initial?.company_id);
+  const companyPending = companies.filter((c) => c.approval === "pending");
   const categoryOptions = keep(categories, initial?.category_id);
   const billTypeOptions = keep(billTypes, initial?.bill_type_id ?? undefined);
   const projectOptions = useMemo(
-    () => keep(projects, initial?.project_id).filter((p) => p.company_id === companyId),
+    () => keep(projects, initial?.project_id).filter((p) => p.company_id === companyId && (approved(p) || p.id === initial?.project_id)),
     [projects, companyId, initial?.project_id]
   );
+
+  const projectPending = projects.filter((p) => p.company_id === companyId && p.approval === "pending");
+  const [requestMsg, setRequestMsg] = useState<{ ok: boolean; text: string } | null>(null);
+
+  /** ขอเพิ่มบริษัท/โครงการ — ผู้ใช้ทั่วไปต้องรอ Admin อนุมัติ (Admin เพิ่มได้ทันที) */
+  async function requestNew(kind: "company" | "project", name: string) {
+    setRequestMsg(null);
+    const supabase = createClient();
+    const res =
+      kind === "company"
+        ? await supabase.from("companies").insert({ name }).select("id, approval").single()
+        : await supabase.from("projects").insert({ name, company_id: companyId }).select("id, approval").single();
+    if (res.error || !res.data) {
+      setRequestMsg({ ok: false, text: friendlyError(res.error?.message) });
+      return;
+    }
+    const what = kind === "company" ? "บริษัท" : "โครงการ";
+    if (res.data.approval === "approved") {
+      setRequestMsg({ ok: true, text: `เพิ่ม${what} “${name}” แล้ว` });
+      if (kind === "company") { setCompanyId(res.data.id); setProjectId(""); } else setProjectId(res.data.id);
+    } else {
+      setRequestMsg({ ok: true, text: `ส่งคำขอเพิ่ม${what} “${name}” แล้ว — เลือกใช้ได้หลัง Admin อนุมัติ (จะมีแจ้งเตือน)` });
+    }
+    router.refresh();
+  }
 
   const total = kept.length + files.length;
 
@@ -205,6 +232,9 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
             required
             value={companyId}
             options={companyOptions}
+            pending={companyPending}
+            onCreate={(n) => requestNew("company", n)}
+            createLabel="ขอเพิ่มบริษัท"
             placeholder="พิมพ์ค้นหาบริษัท"
             onChange={(v) => { if (v !== companyId) { setCompanyId(v); setProjectId(""); } }}
           />
@@ -217,12 +247,21 @@ export default function TaskForm({ companies, projects, categories, billTypes = 
             disabled={!companyId}
             value={projectId}
             options={projectOptions}
+            pending={projectPending}
+            onCreate={(n) => requestNew("project", n)}
+            createLabel="ขอเพิ่มโครงการ"
             placeholder={companyId ? "พิมพ์ค้นหาโครงการ" : "เลือกบริษัทก่อน"}
             emptyText="ไม่พบโครงการในบริษัทนี้"
             onChange={setProjectId}
           />
         </div>
       </div>
+
+      {requestMsg && (
+        <div role="status" className={`-mt-2 rounded-xl px-3.5 py-2.5 text-sm ${requestMsg.ok ? "bg-[#DDF3E6] text-[#17663A]" : "bg-[#FDE4E2] text-danger"}`}>
+          {requestMsg.text}
+        </div>
+      )}
 
       {/* 5. ประเภทบิล + เลขที่เอกสาร + เลขที่ PO */}
       <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">

@@ -75,6 +75,20 @@ export async function renameItem(table: Table, id: string, name: string): Promis
   return run((d) => d.from(table).update({ name: n }).eq("id", id));
 }
 
+/** อนุมัติ/ไม่อนุมัติ คำขอเพิ่มบริษัทหรือโครงการ (อนุมัติโครงการ = อนุมัติบริษัทที่ยังรออยู่ให้ด้วย) */
+export async function decideRequest(table: "companies" | "projects", id: string, approve: boolean): Promise<Result> {
+  await requireAdmin();
+  const db = await createClient();
+  if (table === "projects" && approve) {
+    const { data: p } = await db.from("projects").select("company_id").eq("id", id).maybeSingle();
+    if (p) await db.from("companies").update({ approval: "approved" }).eq("id", p.company_id).eq("approval", "pending");
+  }
+  if (table === "companies" && !approve) {
+    await db.from("projects").update({ approval: "rejected" }).eq("company_id", id).eq("approval", "pending");
+  }
+  return run((d) => d.from(table).update({ approval: approve ? "approved" : "rejected" }).eq("id", id));
+}
+
 export async function setItemActive(table: Table, id: string, active: boolean): Promise<Result> {
   return run((d) => d.from(table).update({ is_active: active }).eq("id", id));
 }

@@ -2,7 +2,7 @@ import { requireAdmin } from "@/lib/auth";
 import { createClient } from "@/lib/supabase/server";
 import { loadMasterData } from "@/lib/masterData";
 import type { Profile, Role } from "@/lib/types";
-import { BillTypePanel, CategoryPanel, CompanyPanel, DepartmentPanel, UserPanel } from "./panels";
+import { BillTypePanel, CategoryPanel, CompanyPanel, DepartmentPanel, RequestPanel, UserPanel } from "./panels";
 
 export default async function AdminDataPage() {
   const me = await requireAdmin();
@@ -35,10 +35,18 @@ export default async function AdminDataPage() {
   return (
     <div className="flex flex-col gap-5">
       <h1 className="text-3xl font-bold">จัดการข้อมูล</h1>
+      <RequestPanel
+        companies={companies.filter((c) => c.approval === "pending")}
+        projects={projects.filter((p) => p.approval === "pending")}
+        allCompanies={companies}
+        names={Object.fromEntries(users.map((u) => [u.id, u.full_name]))}
+      />
       <UserPanel meId={me.id} users={users} pending={pending} departments={departments} />
       <DepartmentPanel departments={departments} taskCounts={count("department_id")} userCounts={userCount} />
       <div className="grid lg:grid-cols-[1.6fr_1fr] gap-4 items-start">
-        <CompanyPanel companies={companies} projects={projects} companyCount={count("company_id")} projectCount={count("project_id")} />
+        <CompanyPanel
+          companies={companies.filter((c) => !c.approval || c.approval === "approved")}
+          projects={projects.filter((p) => !p.approval || p.approval === "approved")} companyCount={count("company_id")} projectCount={count("project_id")} />
         <div className="flex flex-col gap-4">
           <CategoryPanel categories={categories} counts={count("category_id")} />
           <BillTypePanel billTypes={billTypes} counts={count("bill_type_id")} />

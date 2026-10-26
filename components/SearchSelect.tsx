@@ -13,10 +13,27 @@ type Props = {
   disabled?: boolean;
   required?: boolean;
   emptyText?: string;
+  /** รายการที่ขอไว้แล้ว แต่ยังรออนุมัติ (แสดงแต่เลือกไม่ได้) */
+  pending?: Option[];
+  /** แสดงปุ่ม "+ ขอเพิ่ม" เมื่อพิมพ์ชื่อที่ไม่มีในรายการ */
+  onCreate?: (name: string) => void;
+  createLabel?: string;
 };
 
 /** ช่องเลือกแบบพิมพ์ค้นหาได้ — พิมพ์บางส่วนของชื่อแล้วเลือกจากรายการ */
-export default function SearchSelect({ id, value, options, onChange, placeholder = "พิมพ์เพื่อค้นหา", disabled, required, emptyText = "ไม่พบรายการ" }: Props) {
+export default function SearchSelect({
+  id,
+  value,
+  options,
+  onChange,
+  placeholder = "พิมพ์เพื่อค้นหา",
+  disabled,
+  required,
+  emptyText = "ไม่พบรายการ",
+  pending = [],
+  onCreate,
+  createLabel = "ขอเพิ่ม",
+}: Props) {
   const listId = useId();
   const wrapRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.id === value);
@@ -34,6 +51,10 @@ export default function SearchSelect({ id, value, options, onChange, placeholder
     if (!t || (selected && text === selected.name)) return options;
     return options.filter((o) => o.name.toLowerCase().includes(t));
   }, [text, options, selected]);
+  const typed = text.trim();
+  const pendingMatches = pending.filter((o) => !typed || o.name.toLowerCase().includes(typed.toLowerCase()));
+  const exists = [...options, ...pending].some((o) => o.name.trim().toLowerCase() === typed.toLowerCase());
+  const canCreate = !!onCreate && typed.length > 0 && !exists && !(selected && text === selected.name);
 
   // ปิดเมื่อคลิกนอกกล่อง
   useEffect(() => {
@@ -95,7 +116,7 @@ export default function SearchSelect({ id, value, options, onChange, placeholder
       </svg>
       {open && !disabled && (
         <ul id={listId} role="listbox" className="absolute z-30 left-0 right-0 mt-1 max-h-64 overflow-auto rounded-xl border border-line bg-white shadow-lg py-1">
-          {filtered.length === 0 && <li className="px-3.5 py-2.5 text-sm text-muted">{emptyText}</li>}
+          {filtered.length === 0 && pendingMatches.length === 0 && !canCreate && <li className="px-3.5 py-2.5 text-sm text-muted">{emptyText}</li>}
           {filtered.map((o, i) => (
             <li
               key={o.id}
@@ -108,6 +129,22 @@ export default function SearchSelect({ id, value, options, onChange, placeholder
               {o.name}
             </li>
           ))}
+          {pendingMatches.map((o) => (
+            <li key={o.id} role="option" aria-disabled="true" aria-selected={false} className="px-3.5 py-2.5 text-[15px] text-muted cursor-not-allowed flex justify-between gap-2">
+              <span>{o.name}</span>
+              <span className="text-xs font-semibold text-[#7A4A00] bg-[#FFF3E6] rounded-full px-2 py-0.5 shrink-0">รออนุมัติ</span>
+            </li>
+          ))}
+          {canCreate && (
+            <li
+              role="option"
+              aria-selected={false}
+              onMouseDown={(e) => { e.preventDefault(); setOpen(false); onCreate!(typed); }}
+              className="px-3.5 py-2.5 text-[15px] cursor-pointer text-brand font-semibold border-t border-line hover:bg-brand-soft"
+            >
+              + {createLabel} “{typed}”
+            </li>
+          )}
         </ul>
       )}
     </div>

@@ -17,11 +17,10 @@ export default async function NewTaskPage() {
         <Link href="/" aria-label="ย้อนกลับ" className="w-11 h-11 rounded-xl flex items-center justify-center -ml-2"><Back /></Link>
         <h1 className="text-2xl font-bold">แจ้งปัญหาใหม่</h1>
       </div>
-      {data.companies.filter((c) => c.is_active).length === 0 ? (
-        <div className="card p-6 text-muted">ยังไม่มีบริษัทในระบบ กรุณาให้ Admin เพิ่มบริษัทและโครงการก่อน</div>
-      ) : (
-        <TaskForm {...data} departmentChoices={departmentChoices} />
+      {data.companies.filter((c) => c.is_active && (!c.approval || c.approval === "approved")).length === 0 && (
+        <div className="card p-4 text-sm text-muted">ยังไม่มีบริษัทในระบบ — พิมพ์ชื่อในช่องบริษัทแล้วกด “ขอเพิ่มบริษัท” เพื่อส่งให้ Admin อนุมัติ</div>
       )}
+      <TaskForm {...data} departmentChoices={departmentChoices} />
     </div>
   );
 }

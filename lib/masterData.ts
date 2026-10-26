@@ -4,8 +4,8 @@ import type { Named, Project } from "./types";
 export async function loadMasterData() {
   const supabase = await createClient();
   const [co, pr, ca, de, bt] = await Promise.all([
-    supabase.from("companies").select("id, name, is_active").order("name"),
-    supabase.from("projects").select("id, name, is_active, company_id").order("name"),
+    supabase.from("companies").select("id, name, is_active, approval, requested_by").order("name"),
+    supabase.from("projects").select("id, name, is_active, company_id, approval, requested_by").order("name"),
     supabase.from("categories").select("id, name, is_active").order("name"),
     supabase.from("departments").select("id, name, is_active").order("name"),
     supabase.from("bill_types").select("id, name, is_active").order("name"),

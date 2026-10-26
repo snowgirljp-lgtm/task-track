@@ -10,6 +10,7 @@ import {
   removeInvite,
   renameItem,
   setInviteDepartments,
+  decideRequest,
   setItemActive,
   setUserActive,
   toggleUserDepartment,
@@ -511,5 +512,53 @@ function ImportBox() {
         </div>
       )}
     </form>
+  );
+}
+
+// =====================================================================
+// คำขอเพิ่มบริษัท/โครงการ รออนุมัติ
+// =====================================================================
+export function RequestPanel({
+  companies,
+  projects,
+  allCompanies,
+  names,
+}: {
+  companies: Named[];
+  projects: Project[];
+  allCompanies: Named[];
+  names: Record<string, string>;
+}) {
+  const { pending: busy, error, exec } = useAction();
+  const total = companies.length + projects.length;
+  if (total === 0) return null;
+  const coName = (id: string) => allCompanies.find((c) => c.id === id)?.name ?? "-";
+
+  const row = (table: "companies" | "projects", item: Named, label: string, sub: string) => (
+    <div key={item.id} className="flex flex-wrap items-center gap-2 py-2.5 border-b border-[#EEF1F5] last:border-b-0">
+      <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-brand-soft text-[#1446A0]">{label}</span>
+      <div className="flex-1 min-w-[180px]">
+        <div className="font-semibold">{item.name}</div>
+        <div className="text-xs text-muted">{sub}</div>
+      </div>
+      <button type="button" disabled={busy} onClick={() => exec(() => decideRequest(table, item.id, true))} className="btn min-h-9 text-sm bg-[#17663A] text-white">
+        อนุมัติ
+      </button>
+      <button type="button" disabled={busy} onClick={() => exec(() => decideRequest(table, item.id, false))} className="btn min-h-9 text-sm bg-white border border-[#C2410C] text-[#9A360A]">
+        ไม่อนุมัติ
+      </button>
+    </div>
+  );
+
+  return (
+    <section id="requests" className="card p-5 flex flex-col gap-2 border-2 border-[#F0CF5E] bg-[#FFFDF2]">
+      <h2 className="text-lg font-bold">คำขอเพิ่มบริษัท/โครงการ รออนุมัติ ({total})</h2>
+      <p className="text-[13px] text-muted">ผู้ขอจะได้รับแจ้งเตือนผล และเลือกใช้ในงานได้หลังอนุมัติ · อนุมัติโครงการ = อนุมัติบริษัทของโครงการนั้นให้ด้วย</p>
+      <ErrorText error={error} />
+      <div className="flex flex-col">
+        {companies.map((c) => row("companies", c, "บริษัท", `ขอโดย ${names[c.requested_by ?? ""] ?? "-"}`))}
+        {projects.map((p) => row("projects", p, "โครงการ", `บริษัท ${coName(p.company_id)} · ขอโดย ${names[p.requested_by ?? ""] ?? "-"}`))}
+      </div>
+    </section>
   );
 }

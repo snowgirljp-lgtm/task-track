@@ -9,8 +9,11 @@ export async function GET(request: NextRequest) {
 
   if (!Number.isFinite(id)) return NextResponse.redirect(`${origin}/notifications`);
 
-  const { data } = await supabase.from("notifications").select("task_id").eq("id", id).maybeSingle();
+  const { data } = await supabase.from("notifications").select("task_id, kind").eq("id", id).maybeSingle();
   await supabase.from("notifications").update({ read_at: new Date().toISOString() }).eq("id", id).is("read_at", null);
 
-  return NextResponse.redirect(data?.task_id ? `${origin}/tasks/${data.task_id}` : `${origin}/notifications`);
+  if (data?.task_id) return NextResponse.redirect(`${origin}/tasks/${data.task_id}`);
+  if (data?.kind === "approval") return NextResponse.redirect(`${origin}/admin/data#requests`);
+  if (data?.kind === "approved") return NextResponse.redirect(`${origin}/tasks/new`);
+  return NextResponse.redirect(`${origin}/notifications`);
 }

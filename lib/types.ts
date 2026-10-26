@@ -12,5 +12,5 @@ export type Profile = {
   department_ids?: string[];
 };
 
-export type Named = { id: string; name: string; is_active: boolean };
+export type Named = { id: string; name: string; is_active: boolean; approval?: "approved" | "pending" | "rejected"; requested_by?: string | null };
 export type Project = Named & { company_id: string };

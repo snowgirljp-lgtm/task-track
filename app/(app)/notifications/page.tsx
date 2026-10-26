@@ -6,8 +6,11 @@ import { fmtDateTime } from "@/lib/labels";
 import { Back } from "@/components/icons";
 
 // สีตัวอักษรเฉพาะ 2 ประเภทที่ต้องเห็นชัด
-const COLOR: Record<string, string> = { redo: "text-[#C2410C]", new: "text-brand" };
+const COLOR: Record<string, string> = { redo: "text-[#C2410C]", new: "text-brand", approval: "text-brand", rejected: "text-[#C2410C]" };
 const LABEL: Record<string, string> = {
+  approval: "คำขอรออนุมัติ",
+  approved: "อนุมัติแล้ว",
+  rejected: "ไม่อนุมัติ",
   new: "งานใหม่",
   in_progress: "มีคนรับงาน",
   review: "รอตรวจ",
